@@ -8,31 +8,40 @@ Last updated: 2026-09-16
 
 ## Immediate next action
 
-**The next session will be on a different machine.** Start with the resume
-ritual — the cluster will not exist there, and that is expected:
+Session continues on the **same machine (`Nero`)** unless stated otherwise —
+check `SystemInfo.md` at the repository root to confirm before assuming. Start
+with the resume ritual:
 
 ```bash
 cd /mnt/d/Kubernetes && git pull
 cat progress/current-progress.md
 bash scripts/utilities/check-dependencies.sh
+```
 
+If the cluster is reported missing (expected on a different machine — clusters
+never travel):
+
+```bash
 cd /mnt/d/Kubernetes/fundamentals/labs
 kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
-Then finish the three items carried over from Day 01 before starting Day 02.
+Day 01's LAB 01 challenge is now **done** — see
+`journal/daily/day-01-cluster-setup.md`. Two smaller items carry over into
+finishing Day 02:
 
-### Carried over from Day 01
+### Carried over from Day 01 into Day 02
 
 | # | Item | Command |
 |:--:|---|---|
-| 1 | **LAB 01 challenge** — stop a worker node. Write the prediction down *before* running any `kubectl` | `docker stop k8s-lab-worker2` |
-| 2 | See static Pod manifests on disk — the files the kubelet starts without an API server | `docker exec -it k8s-lab-control-plane ls -l /etc/kubernetes/manifests/` |
-| 3 | Check whether both CoreDNS replicas landed on the same node | `kubectl get pods -n kube-system -o wide \| grep coredns` |
+| 1 | See static Pod manifests on disk — the files the kubelet starts without an API server | `docker exec -it k8s-lab-control-plane ls -l /etc/kubernetes/manifests/` |
+| 2 | Check whether both CoreDNS replicas landed on the same node | `kubectl get pods -n kube-system -o wide \| grep coredns` |
 
-Item 1 is the important one. It is the first deliberate failure of the course,
-and the prediction must be written before observing — a wrong prediction that is
-then understood is worth more than a right one that was guessed.
+Then continue Day 02 with the remaining control-plane components (`etcd`,
+`kube-scheduler`, `kube-controller-manager`) on the live cluster — the
+node-failure/recovery half of Day 02 (heartbeats, Lease objects, the Node
+Lifecycle Controller, taints) is already done; see
+`journal/daily/day-02-control-plane-and-nodes.md`.
 
 ---
 
@@ -42,8 +51,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 
 | Day | Item | Journal file | Blocked by |
 |:--:|---|---|---|
-| 01 | LAB 01 — cluster created and verified. **Challenge outstanding** | `day-01-cluster-setup.md` | — |
-| 02 | Control plane vs worker node, inspected on the real cluster | `day-02-control-plane-and-nodes.md` | LAB 01 challenge |
+| 01 | LAB 01 — cluster created, verified, challenge complete | `day-01-cluster-setup.md` | — |
+| 02 | Control plane vs worker node — heartbeat/taint mechanism done; manifests + CoreDNS check + remaining components outstanding | `day-02-control-plane-and-nodes.md` | — |
 | 03 | Architecture and the request flow | `day-03-architecture-request-flow.md` | Day 02 |
 | 04 | kubectl core verbs and output formats | `day-04-kubectl-core.md` | Day 03 |
 | 05 | Namespaces, labels, selectors, annotations | `day-05-namespaces-labels-selectors.md` | Day 04 |

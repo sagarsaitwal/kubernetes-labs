@@ -56,10 +56,13 @@ Advanced Kubernetes  ->  CKA / CKAD / CKS
 
 ## Current progress
 
-**Day 01 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS**
+**Day 02 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS**
 
-A 3-node `kind` cluster is running Kubernetes v1.37.0, verified healthy.
-Next: Day 02 — control plane vs worker node, inspected live.
+A 3-node `kind` cluster is running Kubernetes v1.37.0, verified healthy. Day 01
+is complete, including the node-failure break/fix challenge. Day 02 (control
+plane vs worker node) is underway — the node heartbeat/Lease/taint mechanism
+has been taught and verified live; static Pod manifests, CoreDNS placement,
+and the remaining control-plane components are still to inspect.
 
 | | |
 |---|---|
@@ -105,9 +108,9 @@ verification output was actually seen.**
 
 ### Next topic
 
-Day 02 — Control Plane vs Worker Node.
-One item is carried over: the LAB 01 break/fix challenge (stop a worker node,
-predict the outcome before observing it).
+Finish Day 02 — Control Plane vs Worker Node: static Pod manifest check,
+CoreDNS placement re-check, and the remaining control-plane components
+(`etcd`, `kube-scheduler`, `kube-controller-manager`).
 
 ---
 
@@ -344,7 +347,8 @@ the fix, the verification, the lesson, and what comes next.
 | Date | Day | Topic | Status |
 |---|---|---|---|
 | 2026-09-16 | [00](journal/daily/day-00-setup-and-what-is-kubernetes.md) | Setup and what is Kubernetes | COMPLETED |
-| 2026-09-16 | [01](journal/daily/day-01-cluster-setup.md) | Cluster setup (LAB 01) | PARTIALLY COMPLETED |
+| 2026-09-16 | [01](journal/daily/day-01-cluster-setup.md) | Cluster setup (LAB 01) | COMPLETED |
+| 2026-09-16 | [02](journal/daily/day-02-control-plane-and-nodes.md) | Control plane vs worker node | IN PROGRESS |
 
 ---
 

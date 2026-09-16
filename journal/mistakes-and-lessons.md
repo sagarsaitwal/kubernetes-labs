@@ -53,7 +53,66 @@ Module / Topic:
 
 ## Entries
 
-*No Kubernetes mistakes recorded yet. LAB 01 has not been performed.*
+## Mistake 001
+
+Date: 2026-09-16
+Module / Topic: 01 — LAB 01 challenge (node failure detection)
+
+### What I did
+
+Ran `docker stop k8s-lab-worker2` to simulate a worker node failure, then
+watched `kubectl get nodes -w` in another terminal for the status to change.
+
+### What happened
+
+Hit Ctrl+C on the watch and ran `docker start k8s-lab-worker2` to restore the
+node within a few seconds — well before the 40-second grace period the theory
+predicted. `kubectl get pods -n kube-system -o wide` still showed `kube-proxy`
+and `kindnet` as `1/1 Running` on `worker2` at that moment.
+
+### What I initially thought was wrong
+
+That the experiment had run and shown no visible effect — i.e. that stopping
+the node hadn't (yet) caused anything to change.
+
+### Why it actually happened
+
+Not enough time had elapsed for the Node Lifecycle Controller's grace period
+to expire, so there was nothing to observe yet — the test was aborted before
+it could produce a result, not a result of "nothing happens." Separately, the
+`Running` status seen on the Pods was stale: it was the kubelet's last report
+before the node went dark, not a live re-check by anything in the cluster.
+
+### Correct approach
+
+Re-ran the same experiment, timestamped with `date`, and left the node down
+for over a minute without touching anything. `kubectl get nodes -w` then
+printed `NotReady`, and `kubectl describe node`'s `Events` section showed
+`(x2 over 26m)` on the `NodeNotReady` event — proving the first attempt had, in
+fact, triggered a real (if very brief) transition that simply wasn't caught
+live.
+
+### Commands used to diagnose
+
+```bash
+date; docker stop k8s-lab-worker2
+kubectl get nodes -w
+kubectl describe node k8s-lab-worker2
+```
+
+### Verification
+
+Second attempt measured 44 seconds from `docker stop` to the `Ready`
+condition's `LastTransitionTime` flipping to `Unknown`, matching the predicted
+~40s `node-monitor-grace-period`. Recovery confirmed by the same node's taint
+clearing and `Ready` returning to `True` after `docker start`.
+
+### Lesson
+
+Before concluding a mechanism "doesn't do X," confirm the experiment actually
+ran long enough for X to be possible. And a Pod's last-reported status is not
+proof of its current state once its node stops reporting — it's frozen, not
+re-verified.
 
 ---
 

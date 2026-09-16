@@ -8,7 +8,7 @@ Author: Sagar Saitwal
 | **Day** | 01 |
 | **Module** | 01 — Kubernetes Fundamentals |
 | **Topic** | LAB 01 — set up the Kubernetes learning environment |
-| **Status** | PARTIALLY COMPLETED |
+| **Status** | COMPLETED |
 | **Cluster** | `k8s-lab` — 3 nodes, Kubernetes v1.37.0, kind v0.33.0 |
 
 ---
@@ -411,9 +411,7 @@ CoreDNS Pods on one node is one failure away from total DNS loss.
 
 ---
 
-## Challenge — NOT YET ATTEMPTED
-
-From LAB 01:
+## Challenge — COMPLETED (session of 2026-09-16, continued on Nero)
 
 > Run `docker stop k8s-lab-worker2`.
 >
@@ -426,13 +424,91 @@ From LAB 01:
 > Then observe and compare against the prediction. Restore with
 > `docker start k8s-lab-worker2`.
 
-Carried forward to the next session.
+### Prediction (written before observing)
+
+1. ~40 seconds.
+2. "The control plane" — not yet able to name the specific component.
+3. No — predicted the DaemonSet Pods (`kube-proxy`, `kindnet`) would not be
+   rescheduled elsewhere.
+
+### First attempt — a false negative, not a failed test
+
+`docker stop k8s-lab-worker2` was run at `23:25:47`, but `kubectl get nodes -w`
+was interrupted with Ctrl+C almost immediately and the node was restarted
+before 40 seconds had passed. `kubectl get pods -n kube-system -o wide` still
+showed `kube-proxy`/`kindnet` as `1/1 Running` on `worker2` at that point — but
+this was stale, cached status from the kubelet's last report before it went
+dark, not live confirmation. **Nothing was disproven; not enough time had
+elapsed to observe anything.** This only became clear later, from event
+history (see below).
+
+### Second attempt — timed properly
+
+```text
+23:51:51   docker stop k8s-lab-worker2   (recorded via `date; docker stop ...`)
+23:52:35   Ready condition LastTransitionTime -> Unknown, Reason: NodeStatusUnknown
+```
+
+44 seconds elapsed — consistent with the default `node-monitor-grace-period`
+(40s) plus the Node Lifecycle Controller's own sync interval.
+
+`kubectl describe node k8s-lab-worker2` showed:
+
+```text
+Taints:  node.kubernetes.io/unreachable:NoExecute
+         node.kubernetes.io/unreachable:NoSchedule
+Conditions:
+  Ready   Unknown   ...   NodeStatusUnknown   Kubelet stopped posting node status.
+Events:
+  NodeNotReady   19s (x2 over 26m)   node-controller   Node k8s-lab-worker2 status is now: NodeNotReady
+```
+
+- `From: node-controller` names the exact component (the **Node Lifecycle
+  Controller**, part of `kube-controller-manager`) — not just "the control
+  plane."
+- Two taints, two jobs: `NoSchedule` stops new Pods landing here; `NoExecute`
+  is what would eventually evict existing ones.
+- `kube-proxy` and `kindnet` stayed listed under `Non-terminated Pods`, same
+  age, `0` restarts — never evicted. **Correction to the prediction's
+  reasoning:** it isn't that they "aren't rescheduled elsewhere" after some
+  delay — DaemonSet Pods get an automatic, indefinite toleration for
+  `not-ready`/`unreachable` `NoExecute` taints (no `tolerationSeconds` at
+  all), so they are never evicted by this taint in the first place. An
+  ordinary Pod (owned by a ReplicaSet) would get the default 300s tolerance,
+  then be evicted and recreated on a healthy node by its controller.
+- `(x2 over 26m)` on that event was the tell that the **first attempt did
+  briefly trigger a real `NotReady` transition** around `23:26` — it just
+  wasn't seen live because the watch had already been exited. The cluster's
+  event history remembered it even though the terminal did not.
+
+### Recovery, confirmed
+
+```text
+docker start k8s-lab-worker2
+23:54:22   kubelet posts fresh status; Ready -> True, KubeletReady
+           Taints: <none>
+```
+
+Every condition's `NodeHasSufficientMemory` / `NodeHasNoDiskPressure` /
+`NodeHasSufficientPID` / `NodeReady` event fired **twice** at the same age
+(`99s (x2 over 99s)`) — the same doubled pattern seen when the node first
+joined the cluster (`25m (x2 over 25m)`). A kubelet posting its initial status
+twice in quick succession appears to be normal startup behaviour, not
+something specific to recovering from an outage.
+
+### Outcome vs. prediction
+
+| # | Predicted | Observed |
+|---|---|---|
+| 1 | ~40s | 44s |
+| 2 | "control plane" | `node-controller` (Node Lifecycle Controller) |
+| 3 | Not rescheduled | Confirmed, and stronger than predicted — never evicted at all, due to a DaemonSet-specific indefinite toleration |
 
 ---
 
 ## End-of-Day Status
 
-PARTIALLY COMPLETED
+COMPLETED
 
 | Item | State |
 |---|---|
@@ -442,36 +518,22 @@ PARTIALLY COMPLETED
 | All nodes `Ready` | Done |
 | All `kube-system` Pods `Running` | Done |
 | Four verification questions understood | Done — taught, not independently derived |
-| LAB 01 challenge (node failure) | **Not attempted** |
+| LAB 01 challenge (node failure) | **Done** — predicted, observed, timed, recovery confirmed (2026-09-16, on machine `Nero`) |
 
 ---
 
 ## Next Session
 
-Next journal file: `journal/daily/day-02-control-plane-and-nodes.md`
+Next journal file: `journal/daily/day-02-control-plane-and-nodes.md` — already
+opened; Day 02 is IN PROGRESS (node-failure/recovery mechanism already covered
+via the challenge above). Remaining for Day 02:
 
-**This session ends here. The next session will be on a different machine.**
-
-1. Run the resume ritual:
-   ```bash
-   cd /mnt/d/Kubernetes && git pull
-   cat progress/current-progress.md
-   bash scripts/utilities/check-dependencies.sh
-   ```
-2. Expect the cluster to be reported **missing** — clusters are local and do not
-   travel. Recreate it:
-   ```bash
-   cd /mnt/d/Kubernetes/fundamentals/labs
-   kind create cluster --name k8s-lab --config kind-cluster-config.yaml
-   ```
-3. Complete the outstanding LAB 01 challenge — prediction written down *before*
-   observing.
-4. Verify the static Pod claim directly:
+1. Verify the static Pod claim directly:
    ```bash
    docker exec -it k8s-lab-control-plane ls -l /etc/kubernetes/manifests/
    ```
-5. Check whether both CoreDNS replicas landed on the same node:
+2. Check whether both CoreDNS replicas landed on the same node:
    ```bash
    kubectl get pods -n kube-system -o wide | grep coredns
    ```
-6. Then Day 02 — Control plane vs worker node, inspected on the live cluster.
+3. Continue Day 02 from there — see `journal/daily/day-02-control-plane-and-nodes.md`.
