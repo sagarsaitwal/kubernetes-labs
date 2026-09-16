@@ -116,48 +116,44 @@ Then commit and push, so the other machine can pick it up.
 
 ## MULTI-DEVICE WORKING
 
-This repository is used from more than one machine. Two rules make that work.
+This repository is used from more than one machine. The rule is deliberately
+simple: **the repository lives at the same path on every machine.**
 
-### 1. Never hard-code an absolute path
+| | Path |
+|---|---|
+| Windows | `D:\Kubernetes` |
+| WSL / Linux | `/mnt/d/Kubernetes` |
 
-The repository lives at a different path on each machine. Inside WSL, its
-location is always available as `$KLAB`:
-
-```bash
-cd "$KLAB"                      # repository root
-cd "$KLAB/fundamentals/labs"    # a lab directory
-```
-
-`$KLAB` is set in `~/.bashrc` by `scripts/utilities/setup-machine.sh`.
-
-**In documentation, labs, and scripts: use `$KLAB` or a path relative to the
-repository root. Never `/mnt/d/...`, never `~/kubernetes-labs`, never `D:\...`.**
-
-### 2. The repository is the shared state, not this conversation
-
-Anything that must survive a device switch belongs in a committed file. If it
-only exists in the conversation, it is lost.
+One folder. One copy. Edited from Windows, run from WSL, synchronised through
+GitHub. There is no second lab directory and nothing is copied by hand.
 
 ### Setting up a new machine
 
 ```bash
-git clone https://github.com/sagarsaitwal/kubernetes-labs.git
-cd kubernetes-labs
+git clone https://github.com/sagarsaitwal/kubernetes-labs.git /mnt/d/Kubernetes
+cd /mnt/d/Kubernetes
 bash scripts/utilities/setup-machine.sh
 ```
 
-The script verifies prerequisites, installs `kubectl` and `kind` if missing,
-sets `$KLAB`, and records the machine's environment facts.
+The clone path is not optional — matching it is what keeps every command in this
+repository valid on both machines. The script then verifies prerequisites and
+installs `kubectl` and `kind` if they are missing.
 
-Per-machine environment details live in `progress/environments.md`.
+Per-machine environment details: `progress/environments.md`
+
+### The repository is the shared state, not the conversation
+
+Anything that must survive a device switch belongs in a committed file. If it
+only exists in a conversation, it is lost.
 
 ### Clusters are local, not shared
 
 A `kind` cluster exists only on the machine that created it. Switching devices
-means recreating it — which is cheap, and why `kind` was chosen:
+means recreating it — cheap, and precisely why `kind` was chosen:
 
 ```bash
-kind create cluster --name k8s-lab --config "$KLAB/fundamentals/labs/kind-cluster-config.yaml"
+kind create cluster --name k8s-lab \
+  --config /mnt/d/Kubernetes/fundamentals/labs/kind-cluster-config.yaml
 ```
 
 **Cluster state is disposable. Repository state is not.** Anything worth keeping
@@ -169,10 +165,7 @@ must be a committed manifest, not a live object.
 
 ```bash
 # Where am I?
-cat "$KLAB/progress/current-progress.md"
-
-# What is today's topic?
-grep -A3 "day-NN" "$KLAB/progress/daily-plan.md"
+cat /mnt/d/Kubernetes/progress/current-progress.md
 
 # Cluster health
 kubectl get nodes -o wide
@@ -180,7 +173,8 @@ kubectl get pods -A
 
 # Recreate the lab cluster
 kind delete cluster --name k8s-lab
-kind create cluster --name k8s-lab --config "$KLAB/fundamentals/labs/kind-cluster-config.yaml"
+kind create cluster --name k8s-lab \
+  --config /mnt/d/Kubernetes/fundamentals/labs/kind-cluster-config.yaml
 ```
 
 ## Commit style

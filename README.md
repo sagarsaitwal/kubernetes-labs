@@ -182,29 +182,28 @@ Per-machine details: [`progress/environments.md`](progress/environments.md)
 This repository is used from more than one machine, so it is built to be the
 portable state rather than relying on any single device.
 
+### One folder, same path on every machine
+
+| | Path |
+|---|---|
+| Windows | `D:\Kubernetes` |
+| WSL / Linux | `/mnt/d/Kubernetes` |
+
+Edited from Windows, run from WSL, synchronised through GitHub. There is no
+separate lab directory and nothing is copied by hand — which means every command
+in this repository can be copied verbatim to either machine.
+
 ### Setting up a new machine
 
 ```bash
-git clone https://github.com/sagarsaitwal/kubernetes-labs.git
-cd kubernetes-labs
+git clone https://github.com/sagarsaitwal/kubernetes-labs.git /mnt/d/Kubernetes
+cd /mnt/d/Kubernetes
 bash scripts/utilities/setup-machine.sh
 ```
 
-The script verifies prerequisites (cgroup v2, Docker, memory), installs
-`kubectl` and `kind` with checksum verification if they are missing, exports
-`$KLAB`, and prints this machine's environment facts.
-
-### No absolute paths, anywhere
-
-The repository sits at a different path on every machine. Inside WSL/Linux its
-location is always `$KLAB`:
-
-```bash
-cd "$KLAB/fundamentals/labs"
-kind create cluster --name k8s-lab --config "$KLAB/fundamentals/labs/kind-cluster-config.yaml"
-```
-
-No lab, script, or document here hard-codes a path.
+The clone path is not optional. The script then verifies prerequisites (cgroup
+v2, Docker reachability, memory), installs `kubectl` and `kind` with checksum
+verification if they are missing, and prints this machine's environment facts.
 
 ### What does and does not travel
 
@@ -234,7 +233,7 @@ kubernetes-learning/
 |-- progress/                 Portable learning state (read this first)
 |   |-- current-progress.md   Source of truth for where learning stopped
 |   |-- daily-plan.md         Full Day 00-130 plan, every day and lab
-|   |-- environments.md       Per-machine facts and the $KLAB convention
+|   |-- environments.md       Per-machine facts and the path convention
 |   |-- roadmap.md            Module ordering and rationale
 |   |-- completed-topics.md   Only verified completions
 |   |-- next-steps.md         Queue and unresolved decisions

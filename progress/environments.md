@@ -9,22 +9,36 @@ and kernel version affects which features are usable.
 
 ---
 
-## The `$KLAB` convention
+## The path convention
 
-The repository lives at a different absolute path on every machine. Rather than
-hard-code any of them, each machine exports `$KLAB` pointing at its own copy:
+**The repository lives at the same path on every machine.**
 
-```bash
-cd "$KLAB"                      # repository root
-cd "$KLAB/fundamentals/labs"    # a lab directory
-```
+| | Path |
+|---|---|
+| Windows | `D:\Kubernetes` |
+| WSL / Linux | `/mnt/d/Kubernetes` |
 
-`$KLAB` is written into `~/.bashrc` by `scripts/utilities/setup-machine.sh`,
-which derives it from the script's own location — so it is correct wherever the
-repository was cloned.
+One folder, one copy, synchronised through GitHub. Edited from Windows, run from
+WSL. There is no separate lab directory and nothing is copied by hand.
 
-**Documentation, labs, and scripts in this repository must use `$KLAB` or a path
-relative to the repository root. Never an absolute path.**
+### Why a fixed path rather than a variable
+
+An environment variable is the right answer when a repository genuinely must
+live at different paths — shared CI runners, multiple users, mixed operating
+systems. None of that applies here: both machines are yours.
+
+A convention you enforce once beats a variable you have to remember, and it
+means every command in this repository can be copied verbatim to either machine.
+
+### Why not a separate lab directory in `~`
+
+The tempting alternative is a working directory inside WSL (`~/kubernetes-labs`)
+with files copied back into the repository afterwards. It was rejected because
+**the copy step is the one that gets forgotten** — a lab finished late, the YAML
+never copied back, and the repository silently loses the thing it exists to
+record. Two copies of a file also leaves no answer to "which one is current?".
+
+One folder removes the question entirely.
 
 ---
 
@@ -46,7 +60,7 @@ Primary machine. Verified 2026-09-16.
 | Disk free | 952 GiB |
 | kubectl | v1.37.0 (Kustomize v5.8.1) |
 | kind | v0.33.0 |
-| Repository path | `D:\Kubernetes` on Windows, `/mnt/d/Kubernetes` from WSL |
+| Repository path | `D:\Kubernetes` / `/mnt/d/Kubernetes` |
 
 ### Notes
 
@@ -64,10 +78,13 @@ Primary machine. Verified 2026-09-16.
 Run this on the second machine and paste the output here:
 
 ```bash
-git clone https://github.com/sagarsaitwal/kubernetes-labs.git
-cd kubernetes-labs
+git clone https://github.com/sagarsaitwal/kubernetes-labs.git /mnt/d/Kubernetes
+cd /mnt/d/Kubernetes
 bash scripts/utilities/setup-machine.sh
 ```
+
+The clone path is not optional. Matching it is what keeps every command in this
+repository valid on both machines.
 
 The script prints a ready-made table to paste into this section.
 
@@ -112,7 +129,8 @@ a cluster reconstructed from memory is an outage.
 On switching machines, recreate the cluster:
 
 ```bash
-kind create cluster --name k8s-lab --config "$KLAB/fundamentals/labs/kind-cluster-config.yaml"
+cd /mnt/d/Kubernetes/fundamentals/labs
+kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
 ---
@@ -133,5 +151,5 @@ free -h                       # enough memory for what is planned?
 Or simply re-run the setup script, which is safe to run repeatedly:
 
 ```bash
-bash "$KLAB/scripts/utilities/setup-machine.sh"
+bash /mnt/d/Kubernetes/scripts/utilities/setup-machine.sh
 ```

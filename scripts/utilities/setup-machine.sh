@@ -11,11 +11,15 @@
 # What it does:
 #   1. Verifies the environment can actually run a kind cluster
 #   2. Installs kubectl and kind if they are missing (with checksum verification)
-#   3. Exports $KLAB in ~/.bashrc so labs never need an absolute path
-#   4. Prints this machine's environment facts for progress/environments.md
+#   3. Prints this machine's environment facts for progress/environments.md
 #
-# It is safe to re-run. Nothing is installed twice, and ~/.bashrc is only
-# appended to once.
+# It is safe to re-run. Nothing is installed twice.
+#
+# This repository is expected at the SAME path on every machine:
+#     Windows      D:\Kubernetes
+#     WSL / Linux  /mnt/d/Kubernetes
+# Keeping that identical is what lets every command in this repository be
+# copied verbatim between machines.
 
 set -euo pipefail
 
@@ -36,6 +40,7 @@ FAILED=0
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+EXPECTED_ROOT="/mnt/d/Kubernetes"
 
 head2 "Repository"
 if [ -f "${REPO_ROOT}/CLAUDE.md" ] && [ -d "${REPO_ROOT}/progress" ]; then
@@ -43,6 +48,17 @@ if [ -f "${REPO_ROOT}/CLAUDE.md" ] && [ -d "${REPO_ROOT}/progress" ]; then
 else
   fail "does not look like the kubernetes-labs repository: ${REPO_ROOT}"
   exit 1
+fi
+
+# The repository is expected at the same path on every machine, so that every
+# command in the labs can be copied verbatim between them. This is a warning
+# rather than an error — the repository still works elsewhere, but paths in the
+# lab documents will not match.
+if [ "${REPO_ROOT}" = "${EXPECTED_ROOT}" ]; then
+  ok "path matches the convention (${EXPECTED_ROOT})"
+else
+  warn "repository is at ${REPO_ROOT}, not ${EXPECTED_ROOT}"
+  warn "commands in the lab documents assume ${EXPECTED_ROOT} and will need adjusting"
 fi
 
 # ---------------------------------------------------------------------------
@@ -143,27 +159,19 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 3. $KLAB
+# 3. Existing clusters
 # ---------------------------------------------------------------------------
-head2 "Repository path variable"
+head2 "Clusters on this machine"
 
-BASHRC="${HOME}/.bashrc"
-MARKER="# kubernetes-labs: repository root"
-
-if grep -qF "${MARKER}" "${BASHRC}" 2>/dev/null; then
-  # Already present — rewrite the value in case the repository moved.
-  sed -i "s|^export KLAB=.*|export KLAB=\"${REPO_ROOT}\"|" "${BASHRC}"
-  ok "KLAB updated in ~/.bashrc -> ${REPO_ROOT}"
-else
-  {
-    printf '\n%s\n' "${MARKER}"
-    printf 'export KLAB="%s"\n' "${REPO_ROOT}"
-  } >> "${BASHRC}"
-  ok "KLAB added to ~/.bashrc -> ${REPO_ROOT}"
+if command -v kind >/dev/null 2>&1; then
+  EXISTING="$(kind get clusters 2>/dev/null || true)"
+  if [ -n "${EXISTING}" ]; then
+    printf '  existing kind clusters:\n'
+    printf '%s\n' "${EXISTING}" | sed 's/^/    - /'
+  else
+    ok "no kind clusters yet"
+  fi
 fi
-
-export KLAB="${REPO_ROOT}"
-warn "run 'source ~/.bashrc' (or open a new shell) for \$KLAB in this session"
 
 # ---------------------------------------------------------------------------
 # 4. Environment facts for progress/environments.md
@@ -194,8 +202,8 @@ head2 "Result"
 if [ "${FAILED}" -eq 0 ]; then
   ok "machine is ready"
   printf '\nNext:\n'
-  printf '  source ~/.bashrc\n'
-  printf '  kind create cluster --name k8s-lab --config "$KLAB/fundamentals/labs/kind-cluster-config.yaml"\n\n'
+  printf '  cd %s/fundamentals/labs\n' "${REPO_ROOT}"
+  printf '  kind create cluster --name k8s-lab --config kind-cluster-config.yaml\n\n'
 else
   fail "fix the failures above before creating a cluster"
   exit 1
