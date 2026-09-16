@@ -1,0 +1,35 @@
+# Normalise line endings.
+#
+# This repository is edited on Windows but every script and manifest is
+# consumed inside WSL2 / Linux containers. A shell script committed with CRLF
+# fails at runtime with "bad interpreter: No such file or directory", and the
+# cause is invisible in an editor — so line endings are pinned here rather
+# than left to each machine's core.autocrlf setting.
+
+# Default: normalise text files to LF in the repository.
+* text=auto eol=lf
+
+# Files that MUST be LF — these are executed or parsed by Linux tooling.
+*.sh      text eol=lf
+*.bash    text eol=lf
+*.yaml    text eol=lf
+*.yml     text eol=lf
+*.json    text eol=lf
+*.md      text eol=lf
+Dockerfile text eol=lf
+Makefile  text eol=lf
+
+# Windows-only files keep CRLF.
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
+
+# Binary files — never touched.
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.pdf     binary
+*.tgz     binary
+*.gz      binary
+*.zip     binary
