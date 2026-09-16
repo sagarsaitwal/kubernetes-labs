@@ -7,6 +7,12 @@ Last updated: 2026-09-16
 > This file is the single source of truth for where the learning stopped.
 > On any new session or new device, read this file FIRST.
 
+**Current Day: 01**
+
+> The line above is machine-readable. `scripts/utilities/check-dependencies.sh`
+> parses it to decide which dependencies this day actually requires. Keep the
+> exact format `Current Day: NN` when updating it.
+
 ---
 
 ## Current Module

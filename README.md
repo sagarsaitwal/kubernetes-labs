@@ -205,6 +205,19 @@ The clone path is not optional. The script then verifies prerequisites (cgroup
 v2, Docker reachability, memory), installs `kubectl` and `kind` with checksum
 verification if they are missing, and prints this machine's environment facts.
 
+### Resuming on the other machine
+
+```bash
+cd /mnt/d/Kubernetes && git pull
+cat progress/current-progress.md                      # where work stopped
+bash scripts/utilities/check-dependencies.sh          # what this machine lacks
+```
+
+The check reads the current day and reports **only** what that day needs —
+host tools, cluster state, and in-cluster components — so nothing is installed
+before it can be explained. Full reference:
+[`progress/dependencies.md`](progress/dependencies.md)
+
 ### What does and does not travel
 
 | Travels via git | Does **not** travel |
@@ -234,6 +247,7 @@ kubernetes-learning/
 |   |-- current-progress.md   Source of truth for where learning stopped
 |   |-- daily-plan.md         Full Day 00-130 plan, every day and lab
 |   |-- environments.md       Per-machine facts and the path convention
+|   |-- dependencies.md       What must exist on a device, by day
 |   |-- roadmap.md            Module ordering and rationale
 |   |-- completed-topics.md   Only verified completions
 |   |-- next-steps.md         Queue and unresolved decisions
@@ -265,7 +279,8 @@ kubernetes-learning/
 |-- examples/                 Small, focused, reusable manifests
 |-- projects/                 Progressively harder end-to-end projects
 |-- scripts/
-|   |-- utilities/setup-machine.sh   One-command setup for a new machine
+|   |-- utilities/setup-machine.sh       One-command setup for a new machine
+|   |-- utilities/check-dependencies.sh  What this machine is missing today
 |
 |-- Reference/                Source material and prerequisite summary
 ```

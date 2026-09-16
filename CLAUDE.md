@@ -31,16 +31,54 @@ defined in `Reference/`:
 Before teaching, answering, or creating anything:
 
 1. Read `progress/current-progress.md` — the single source of truth for where
-   learning stopped.
+   learning stopped. The `Current Day: NN` line gives the day number.
 2. Read the most recent file in `journal/daily/`.
 3. Read `progress/next-steps.md` — the queue and any open decisions.
-4. Check `progress/daily-plan.md` for the scheduled topic of the current day.
-5. Summarise the previous session in 3-5 bullets.
-6. State today's objective.
-7. Continue from exactly where the last session stopped.
+4. Check `progress/daily-plan.md` for the scheduled topic of that day.
+5. Check `progress/dependencies.md` for what that day requires.
+6. **Verify the machine.** Run, and report the result:
+   ```bash
+   bash /mnt/d/Kubernetes/scripts/utilities/check-dependencies.sh
+   ```
 
 **Never restart the course from the beginning.** Never assume a session is
 independent of the ones before it.
+
+### Required format of the first response
+
+The first response of any session must contain these four sections, in order,
+before any teaching begins:
+
+```text
+1. WHERE I LEFT OFF
+   Day NN, module, topic. 3-5 bullets summarising the previous session:
+   what was learned, what was completed, what broke, what was unresolved.
+
+2. MACHINE STATE
+   Output of check-dependencies.sh, interpreted — not pasted raw.
+   Explicitly: is this the same machine as last session, or a different one?
+
+3. WHAT IS MISSING (if anything)
+   Each missing dependency, why it is needed for this day, and the exact
+   command to restore it. Distinguish clearly:
+     - host tools      -> install once, permanent
+     - cluster         -> local, never travels, recreate it
+     - in-cluster      -> lost with the cluster, reinstall per cluster
+     - credentials     -> configure per machine, never committed
+
+4. TODAY'S OBJECTIVE
+   The scheduled topic for this day, and the first concrete action.
+```
+
+**If a dependency is missing, resolve it before teaching anything.** Continuing
+a lab on a machine that cannot run it produces confusing errors that look like
+Kubernetes problems and are not.
+
+### Switching machines
+
+Clusters do not travel. A different machine will legitimately report the cluster
+and every in-cluster component as missing — that is expected, not a failure.
+Say so plainly, then recreate what is needed.
 
 ---
 
