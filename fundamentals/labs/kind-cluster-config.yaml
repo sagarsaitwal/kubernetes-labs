@@ -1,0 +1,94 @@
+# kind cluster configuration — Kubernetes learning lab
+#
+# Author: Sagar Saitwal
+# Used by: LAB 01 (fundamentals/labs/lab-01-lab-environment-setup.md)
+#
+# Create with:
+#   kind create cluster --name k8s-lab --config kind-cluster-config.yaml
+#
+# ---------------------------------------------------------------------------
+# apiVersion / kind
+#
+# This file looks like a Kubernetes object, and deliberately so — but it is
+# read by the kind CLI on this machine, not by any cluster. It never reaches
+# an API server. kind uses it to decide how many Docker containers to create
+# and what role each one plays.
+# ---------------------------------------------------------------------------
+apiVersion: kind.x-k8s.io/v1alpha4
+kind: Cluster
+name: k8s-lab
+
+# ---------------------------------------------------------------------------
+# TOPOLOGY: 1 control-plane + 2 workers
+#
+# Each entry below becomes ONE Docker container acting as ONE Kubernetes node.
+#
+# Why three nodes and not one:
+#
+#   Kubernetes' core job is deciding WHICH machine runs a workload. With a
+#   single node that decision has exactly one possible answer, so the following
+#   become impossible to observe rather than merely uninteresting:
+#
+#     - nodeSelector / node affinity   (Module 11)
+#     - pod anti-affinity              (Module 11)
+#     - topology spread constraints    (Module 11)
+#     - DaemonSet behaviour            (Module 04) — one Pod per node is
+#                                      indistinguishable from a Deployment
+#     - node failure and rescheduling  — the single most important thing
+#                                      Kubernetes does, and the whole reason
+#                                      it exists over Docker Compose
+#
+#   With workers present, a worker can be stopped (docker stop k8s-lab-worker2)
+#   and the cluster's reaction watched directly.
+#
+# Cost of this choice on this machine:
+#
+#   control-plane   ~600 MiB
+#   each worker     ~300 MiB
+#   total           ~1.2 GiB of 7.0 GiB available
+#   startup         ~60-90s instead of ~30s
+#
+#   Module 17 adds Prometheus + Grafana to this same cluster. It still fits.
+#
+# Why two workers and not three or more:
+#
+#   Two is the minimum that makes "spread across nodes" a real outcome rather
+#   than a tautology. A third worker costs memory without demonstrating
+#   anything new at this stage.
+#
+# Revisit this after Module 11. The cluster is cheap to destroy and rebuild
+# (kind delete cluster --name k8s-lab), so this is a reversible decision, not
+# a commitment.
+# ---------------------------------------------------------------------------
+nodes:
+- role: control-plane
+- role: worker
+- role: worker
+
+
+# ---------------------------------------------------------------------------
+# NOT ENABLED YET — signpost for Module 15 (Ingress)
+#
+# Ingress will require the control-plane node to accept traffic on host ports
+# 80 and 443, which needs extraPortMappings plus a node label that the ingress
+# controller selects on.
+#
+# Left commented deliberately: adding configuration you cannot yet explain is
+# how a lab environment becomes a black box. Uncomment it in Module 15, when
+# the reason for every line is clear.
+#
+# - role: control-plane
+#   kubeadmConfigPatches:
+#   - |
+#     kind: InitConfiguration
+#     nodeRegistration:
+#       kubeletExtraArgs:
+#         node-labels: "ingress-ready=true"
+#   extraPortMappings:
+#   - containerPort: 80
+#     hostPort: 80
+#     protocol: TCP
+#   - containerPort: 443
+#     hostPort: 443
+#     protocol: TCP
+# ---------------------------------------------------------------------------
