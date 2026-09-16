@@ -1,0 +1,43 @@
+# Kubernetes / kubeconfig — never commit cluster credentials
+kubeconfig
+kubeconfig-*
+*.kubeconfig
+.kube/
+admin.conf
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Cloud credentials
+.aws/
+.azure/
+credentials
+*-credentials.yaml
+
+# Secret manifests that were rendered with real values
+*-secret-real.yaml
+secrets.env
+.env
+.env.*
+!.env.example
+
+# Helm
+charts/*.tgz
+**/charts/*.tgz
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Scratch
+tmp/
+scratch/
+*.log
