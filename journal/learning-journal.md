@@ -11,7 +11,8 @@ only — full detail lives in `journal/daily/day-NN-topic.md`.
 
 | Date | Day | Module | Topic | Status | Major Learning | Issue |
 |---|---|---|---|---|---|---|
-| 2026-09-16 | [00](daily/day-00-setup-and-what-is-kubernetes.md) | 01 — Fundamentals | Setup and what is Kubernetes | IN PROGRESS | Kubernetes solves the problems Compose stops at; `apply` succeeding is not proof of running; lab environment confirmed viable | — |
+| 2026-09-16 | [00](daily/day-00-setup-and-what-is-kubernetes.md) | 01 — Fundamentals | Setup and what is Kubernetes | COMPLETED | Kubernetes solves the problems Compose stops at; `apply` succeeding is not proof of running; lab environment confirmed viable | — |
+| 2026-09-16 | [01](daily/day-01-cluster-setup.md) | 01 — Fundamentals | Cluster setup (LAB 01) | PARTIALLY COMPLETED | A node is a container sharing the host kernel; a Pod's name reveals its creator; static Pods bootstrap the control plane; replica count is not redundancy | LAB 01 challenge not attempted |
 
 ---
 

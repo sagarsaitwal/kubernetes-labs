@@ -28,8 +28,8 @@ break/fix cycle, one journal entry. At a steady 5 days per week this is about
 | | |
 |---|---|
 | Total planned days | 131 (Day 00 - Day 130) |
-| Completed | 0 |
-| In progress | 1 (Day 00) |
+| Completed | 1 (Day 00) |
+| In progress | 1 (Day 01 — LAB 01 challenge outstanding) |
 | Projects | 10 |
 | Certifications targeted | CKA, CKAD, CKS |
 
@@ -42,8 +42,8 @@ fluent enough with `kubectl` that it stops being an obstacle.
 
 | Day | Topic | File | Lab | Status |
 |:--:|---|---|---|---|
-| 00 | Setup and what is Kubernetes | `day-00-setup-and-what-is-kubernetes.md` | — | IN PROGRESS |
-| 01 | Cluster setup with kind | `day-01-cluster-setup.md` | LAB 01 | NOT STARTED |
+| 00 | Setup and what is Kubernetes | `day-00-setup-and-what-is-kubernetes.md` | — | COMPLETED |
+| 01 | Cluster setup with kind | `day-01-cluster-setup.md` | LAB 01 | PARTIALLY COMPLETED |
 | 02 | Control plane vs worker node | `day-02-control-plane-and-nodes.md` | LAB 02 | NOT STARTED |
 | 03 | Architecture and the request flow | `day-03-architecture-request-flow.md` | LAB 03 | NOT STARTED |
 | 04 | kubectl core verbs and output formats | `day-04-kubectl-core.md` | LAB 04 | NOT STARTED |
@@ -454,3 +454,4 @@ Changes to this plan get recorded here rather than silently applied.
 | Date | Change | Reason |
 |---|---|---|
 | 2026-09-16 | Plan created | Initial scope: Day 00-130 |
+| 2026-09-16 | Day 00 completed, Day 01 partially completed | Cluster built and verified; LAB 01 break/fix challenge carried forward |

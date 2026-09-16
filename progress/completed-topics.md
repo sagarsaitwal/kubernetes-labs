@@ -9,9 +9,16 @@ verification output was actually seen. Nothing is added optimistically.
 
 ## Kubernetes
 
-| Date | Module | Topic | Lab | Verification |
-|---|---|---|---|---|
-| — | — | *No Kubernetes topic completed yet* | — | — |
+| Date | Day | Module | Topic | Lab | Verification |
+|---|:--:|---|---|---|---|
+| 2026-09-16 | 00 | 01 | What is Kubernetes; reconciliation loop; control plane vs nodes | — | Theory understood; carried into Day 01 by reading live cluster output |
+| 2026-09-16 | 01 | 01 | Cluster creation, node anatomy, static Pods, DaemonSets | LAB 01 (partial) | 3 nodes `Ready`, 12 `kube-system` Pods `Running`, client and server both v1.37.0 |
+
+### Not yet complete
+
+| Item | Why it is not marked complete |
+|---|---|
+| LAB 01 challenge | Stopping a worker node and predicting the outcome has not been attempted |
 
 ---
 

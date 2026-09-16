@@ -8,17 +8,31 @@ Last updated: 2026-09-16
 
 ## Immediate next action
 
-**LAB 01 — Set up the Kubernetes learning environment.**
+**The next session will be on a different machine.** Start with the resume
+ritual — the cluster will not exist there, and that is expected:
 
-File: `fundamentals/labs/lab-01-lab-environment-setup.md`
+```bash
+cd /mnt/d/Kubernetes && git pull
+cat progress/current-progress.md
+bash scripts/utilities/check-dependencies.sh
 
-Nothing else proceeds until a cluster exists and `kubectl get nodes` reports
-`Ready`.
+cd /mnt/d/Kubernetes/fundamentals/labs
+kind create cluster --name k8s-lab --config kind-cluster-config.yaml
+```
 
-### Why this is first
+Then finish the three items carried over from Day 01 before starting Day 02.
 
-Every remaining module is hands-on. Without a working cluster there is nothing
-to apply YAML to, nothing to break, and nothing to troubleshoot.
+### Carried over from Day 01
+
+| # | Item | Command |
+|:--:|---|---|
+| 1 | **LAB 01 challenge** — stop a worker node. Write the prediction down *before* running any `kubectl` | `docker stop k8s-lab-worker2` |
+| 2 | See static Pod manifests on disk — the files the kubelet starts without an API server | `docker exec -it k8s-lab-control-plane ls -l /etc/kubernetes/manifests/` |
+| 3 | Check whether both CoreDNS replicas landed on the same node | `kubectl get pods -n kube-system -o wide \| grep coredns` |
+
+Item 1 is the important one. It is the first deliberate failure of the course,
+and the prediction must be written before observing — a wrong prediction that is
+then understood is worth more than a right one that was guessed.
 
 ---
 
@@ -28,8 +42,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 
 | Day | Item | Journal file | Blocked by |
 |:--:|---|---|---|
-| 01 | LAB 01 — install kubectl + kind, create the 3-node cluster, verify | `day-01-cluster-setup.md` | Nothing |
-| 02 | Control plane vs worker node, inspected on the real cluster | `day-02-control-plane-and-nodes.md` | Day 01 |
+| 01 | LAB 01 — cluster created and verified. **Challenge outstanding** | `day-01-cluster-setup.md` | — |
+| 02 | Control plane vs worker node, inspected on the real cluster | `day-02-control-plane-and-nodes.md` | LAB 01 challenge |
 | 03 | Architecture and the request flow | `day-03-architecture-request-flow.md` | Day 02 |
 | 04 | kubectl core verbs and output formats | `day-04-kubectl-core.md` | Day 03 |
 | 05 | Namespaces, labels, selectors, annotations | `day-05-namespaces-labels-selectors.md` | Day 04 |
@@ -39,7 +53,7 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 
 ## Decisions made
 
-### 1. Cluster topology — DECIDED
+### 1. Cluster topology — DECIDED, and now built
 
 **1 control-plane + 2 workers**, declared in
 `fundamentals/labs/kind-cluster-config.yaml`.

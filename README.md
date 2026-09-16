@@ -56,9 +56,10 @@ Advanced Kubernetes  ->  CKA / CKAD / CKS
 
 ## Current progress
 
-**Day 00 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS**
+**Day 01 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS**
 
-Currently at Lesson 01. No cluster exists yet; LAB 01 on Day 01 sets one up.
+A 3-node `kind` cluster is running Kubernetes v1.37.0, verified healthy.
+Next: Day 02 — control plane vs worker node, inspected live.
 
 | | |
 |---|---|
@@ -104,8 +105,9 @@ verification output was actually seen.**
 
 ### Next topic
 
-LAB 01 — set up the Kubernetes learning environment.
-See [`fundamentals/labs/lab-01-lab-environment-setup.md`](fundamentals/labs/lab-01-lab-environment-setup.md)
+Day 02 — Control Plane vs Worker Node.
+One item is carried over: the LAB 01 break/fix challenge (stop a worker node,
+predict the outcome before observing it).
 
 ---
 
@@ -341,7 +343,8 @@ the fix, the verification, the lesson, and what comes next.
 
 | Date | Day | Topic | Status |
 |---|---|---|---|
-| 2026-09-16 | [00](journal/daily/day-00-setup-and-what-is-kubernetes.md) | Setup and what is Kubernetes | PARTIALLY COMPLETED |
+| 2026-09-16 | [00](journal/daily/day-00-setup-and-what-is-kubernetes.md) | Setup and what is Kubernetes | COMPLETED |
+| 2026-09-16 | [01](journal/daily/day-01-cluster-setup.md) | Cluster setup (LAB 01) | PARTIALLY COMPLETED |
 
 ---
 
