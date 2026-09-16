@@ -259,14 +259,20 @@ above — and disagreeing with it at that point would itself be a good sign.
 ## Task 4 — Create the cluster
 
 ```bash
-cd /mnt/d/Kubernetes/fundamentals/labs
-kind create cluster --name k8s-lab --config kind-cluster-config.yaml
+kind create cluster --name k8s-lab \
+  --config "$KLAB/fundamentals/labs/kind-cluster-config.yaml"
 ```
 
 | Flag | Meaning |
 |---|---|
 | `--name k8s-lab` | Names the cluster. Without it you get `kind`, and the kubeconfig context becomes `kind-k8s-lab` |
-| `--config <file>` | Uses your declared topology instead of the single-node default |
+| `--config <file>` | Uses the declared 3-node topology instead of the single-node default |
+
+> **`$KLAB` is the repository root on this machine.** It is set in `~/.bashrc` by
+> `scripts/utilities/setup-machine.sh`. The repository sits at a different
+> absolute path on each machine, so no lab in this repository ever hard-codes
+> one. If `echo $KLAB` prints nothing, run `source ~/.bashrc`, or re-run the
+> setup script. See `progress/environments.md`.
 
 **Expected output shape:**
 

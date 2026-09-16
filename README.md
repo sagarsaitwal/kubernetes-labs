@@ -173,6 +173,52 @@ Two details of this setup matter more than they look:
 `kubeadm` — building a cluster by hand — is deliberately deferred to Module 22,
 once there is enough context for it to teach something.
 
+Per-machine details: [`progress/environments.md`](progress/environments.md)
+
+---
+
+## Working across devices
+
+This repository is used from more than one machine, so it is built to be the
+portable state rather than relying on any single device.
+
+### Setting up a new machine
+
+```bash
+git clone https://github.com/sagarsaitwal/kubernetes-labs.git
+cd kubernetes-labs
+bash scripts/utilities/setup-machine.sh
+```
+
+The script verifies prerequisites (cgroup v2, Docker, memory), installs
+`kubectl` and `kind` with checksum verification if they are missing, exports
+`$KLAB`, and prints this machine's environment facts.
+
+### No absolute paths, anywhere
+
+The repository sits at a different path on every machine. Inside WSL/Linux its
+location is always `$KLAB`:
+
+```bash
+cd "$KLAB/fundamentals/labs"
+kind create cluster --name k8s-lab --config "$KLAB/fundamentals/labs/kind-cluster-config.yaml"
+```
+
+No lab, script, or document here hard-codes a path.
+
+### What does and does not travel
+
+| Travels via git | Does **not** travel |
+|---|---|
+| All repository content | The cluster — `kind` nodes are local Docker containers |
+| Learning progress and journals | Objects running in it — they live in that cluster's etcd |
+| Manifests and configuration | kubeconfig — points at a local port, and is `.gitignore`d |
+| | Pulled container images — local Docker cache |
+
+**Cluster state is disposable; repository state is not.** Anything worth keeping
+must be a committed manifest, not a live object — which is the same discipline
+GitOps formalises later in the course.
+
 ---
 
 ## Repository structure
@@ -181,12 +227,14 @@ once there is enough context for it to teach something.
 kubernetes-learning/
 |
 |-- README.md                 This file
+|-- CLAUDE.md                 Working agreement; read first on any machine
 |-- LICENSE                   MIT
 |-- CONTRIBUTING.md           Conventions used throughout
 |
 |-- progress/                 Portable learning state (read this first)
 |   |-- current-progress.md   Source of truth for where learning stopped
 |   |-- daily-plan.md         Full Day 00-130 plan, every day and lab
+|   |-- environments.md       Per-machine facts and the $KLAB convention
 |   |-- roadmap.md            Module ordering and rationale
 |   |-- completed-topics.md   Only verified completions
 |   |-- next-steps.md         Queue and unresolved decisions
@@ -217,7 +265,8 @@ kubernetes-learning/
 |-- gitops/argocd/            Argo CD
 |-- examples/                 Small, focused, reusable manifests
 |-- projects/                 Progressively harder end-to-end projects
-|-- scripts/                  kubectl helpers, troubleshooting scripts, utilities
+|-- scripts/
+|   |-- utilities/setup-machine.sh   One-command setup for a new machine
 |
 |-- Reference/                Source material and prerequisite summary
 ```
