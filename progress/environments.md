@@ -73,35 +73,41 @@ Primary machine. Verified 2026-09-16.
 
 ---
 
-## Machine 2 — not yet recorded
+## Machine 2 — Nero
 
-Run this on the second machine and paste the output here:
-
-```bash
-git clone https://github.com/sagarsaitwal/kubernetes-labs.git /mnt/d/Kubernetes
-cd /mnt/d/Kubernetes
-bash scripts/utilities/setup-machine.sh
-```
-
-The clone path is not optional. Matching it is what keeps every command in this
-repository valid on both machines.
-
-The script prints a ready-made table to paste into this section.
+Verified 2026-09-16.
 
 | Item | Value |
 |---|---|
-| Host OS | |
-| Linux | |
-| Kernel | |
-| Architecture | |
-| cgroup | |
-| Docker | |
-| CPU | |
-| Memory | |
-| Disk free | |
-| kubectl | |
-| kind | |
-| Repository path | |
+| Host OS | Windows (WSL2 host) |
+| Linux | WSL2, FedoraLinux-44 |
+| Kernel | 6.6.87.2-microsoft-standard-WSL2 |
+| Architecture | x86_64 |
+| cgroup | cgroup2fs (v2 unified) |
+| Docker | Engine 29.7.2 |
+| CPU | 12 cores |
+| Memory | 7 GiB total |
+| Disk free | 953 GiB |
+| kubectl | v1.37.0 |
+| kind | v0.33.0 |
+| Repository path | `D:\Kubernetes` / `/mnt/d/Kubernetes` |
+
+### Notes
+
+- Matches IT-SAGARS on Docker version and cgroup mode, but is a distinct
+  machine — the kernel build (`6.6` vs `6.18`) and hostname (`Nero` vs
+  `IT-SAGARS`) are what actually distinguish them. Neither `kubectl` nor `kind`
+  nor a cluster existed here before 2026-09-16; both were installed and the
+  `k8s-lab` cluster created fresh via `setup-machine.sh`.
+
+---
+
+## Quick per-machine dependency status
+
+For "what does *this* machine have right now, and what command fixes a gap" at
+a glance, see **`SystemInfo.md`** at the repository root — it tracks both
+machines side by side and is meant to be read at the start of every session,
+before the detail in this file.
 
 ---
 

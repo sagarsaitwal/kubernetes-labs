@@ -36,10 +36,17 @@ Before teaching, answering, or creating anything:
 3. Read `progress/next-steps.md` — the queue and any open decisions.
 4. Check `progress/daily-plan.md` for the scheduled topic of that day.
 5. Check `progress/dependencies.md` for what that day requires.
-6. **Verify the machine.** Run, and report the result:
+6. Read `SystemInfo.md` (repository root) — identify this machine by
+   `hostname`, and check what it already has recorded as installed versus the
+   other known machine. This tells you what to *expect* before you verify it.
+7. **Verify the machine.** Run, and report the result:
    ```bash
    bash /mnt/d/Kubernetes/scripts/utilities/check-dependencies.sh
    ```
+   Trust this live output over `SystemInfo.md` if the two disagree — the file
+   is a snapshot and can go stale. Then update `SystemInfo.md` for this
+   machine so the next session (possibly on the other machine) starts
+   accurate instead of guessing.
 
 **Never restart the course from the beginning.** Never assume a session is
 independent of the ones before it.
@@ -60,11 +67,14 @@ before any teaching begins:
 
 3. WHAT IS MISSING (if anything)
    Each missing dependency, why it is needed for this day, and the exact
-   command to restore it. Distinguish clearly:
+   command to restore it. Always include the exact command — never describe a
+   fix without also giving the copy-pasteable command for it. Distinguish
+   clearly:
      - host tools      -> install once, permanent
      - cluster         -> local, never travels, recreate it
      - in-cluster      -> lost with the cluster, reinstall per cluster
      - credentials     -> configure per machine, never committed
+   After resolving anything, update `SystemInfo.md` for this machine.
 
 4. TODAY'S OBJECTIVE
    The scheduled topic for this day, and the first concrete action.
