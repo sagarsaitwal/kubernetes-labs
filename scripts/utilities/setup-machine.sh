@@ -182,7 +182,7 @@ cat <<EOF
 
 | Item | Value |
 |---|---|
-| Hostname | $(hostname) |
+| Hostname | $(hostnamectl --static 2>/dev/null || cat /etc/hostname 2>/dev/null || echo unknown) |
 | Linux | $(grep -oP '^PRETTY_NAME="\K[^"]+' /etc/os-release 2>/dev/null || echo unknown) |
 | Kernel | ${KERNEL} |
 | Architecture | ${ARCH} |
