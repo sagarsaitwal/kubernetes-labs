@@ -32,12 +32,12 @@ except the deliberately deferred items below.
 
 ### Day 04 — first concrete action
 
-kubectl core verbs and output formats. No specific first action decided yet —
-start by reading whatever theory file exists for kubectl fundamentals
-(`fundamentals/` — check for one before writing new material), then design a
-lab around the verbs/output-format combinations not yet used incidentally
-(`get`, `describe`, `explain`, `-o json`/`-o yaml`/`-o jsonpath`, `--sort-by`,
-`--field-selector`).
+**Queued, not started.** Teaching content was already given in the previous
+session (verb families table, `kubectl explain`, output formats, `kubectl
+diff`/`--dry-run=server`, `logs`/`exec`) but no commands were run — resume
+directly with the six-command list in `progress/current-progress.md` rather
+than re-deriving the plan. No lesson file was written for this — same
+pattern as Days 02-03, built live and journaled afterward once actually run.
 
 ---
 

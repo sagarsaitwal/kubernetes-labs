@@ -38,11 +38,43 @@ Module 01 — Kubernetes Fundamentals
 
 ## Current Topic
 
-Day 03 COMPLETED. Next: Day 04 — kubectl core verbs and output formats.
+Day 03 COMPLETED. Day 04 — kubectl core verbs and output formats — **queued,
+not started.** Teaching content was prepared and given in the previous
+session (verb families, `kubectl explain`, output formats, `diff`/`dry-run`,
+`logs`/`exec`), but **no commands were actually run** — session ended before
+any hands-on work happened. Do not treat this as progress; resume from the
+plan below.
 
 ## Current Subtopic
 
-Day 04 has not started.
+Day 04 has not started. Resume with the six queued commands below — the
+explanation for each was already given last session; re-explain only if it's
+been long enough that a refresher is warranted, otherwise go straight to
+running them.
+
+```bash
+# 1. Full stored object — compare mentally against fundamentals/labs/nginx-deployment.yaml
+kubectl get deployment nginx-trace -o yaml
+
+# 2. Extract one exact field with jsonpath
+kubectl get deployment nginx-trace -o jsonpath='{.spec.template.spec.containers[0].image}'
+
+# 3. See admission's effect BEFORE creating anything (dry-run=server)
+kubectl apply -f fundamentals/labs/nginx-deployment.yaml --dry-run=server -o yaml | grep -A3 tolerations
+
+# 4. A custom table, sorted
+kubectl get pods -o custom-columns='NAME:.metadata.name,NODE:.spec.nodeName,RESTARTS:.status.containerStatuses[0].restartCount' --sort-by='.status.containerStatuses[0].restartCount'
+
+# 5. Read one Pod's logs
+kubectl logs <one of the nginx-trace pods — check `kubectl get pods` for current names>
+
+# 6. Run a command inside it
+kubectl exec -it <same pod> -- cat /etc/nginx/nginx.conf
+```
+
+Note: `nginx-trace` was still running and healthy (3/3, 34m old) as of last
+session, on `Nero`. Re-verify it's still there before assuming — if this
+session is on a different machine or the cluster was recreated, it won't be.
 
 ## Learning Status
 
