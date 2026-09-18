@@ -116,6 +116,79 @@ re-verified.
 
 ---
 
+## Mistake 002
+
+Date: 2026-09-18
+Module / Topic: 01 — reading `kube-scheduler.yaml` (stateless vs stateful)
+
+### What I did
+
+Was asked to classify `kube-scheduler.yaml` as stateless or stateful,
+immediately after correctly reasoning through the same question for
+`kube-apiserver.yaml` (stateless) and `etcd.yaml` (stateful — it has
+`--data-dir=/var/lib/etcd` plus a real `etcd-data` volume mount).
+
+### What happened
+
+Answered "stateful." Wrong — `kube-scheduler` is stateless, in the same
+category as `kube-apiserver`.
+
+### What I initially thought was wrong
+
+No specific reasoning was given at the time — the answer was a guess rather
+than a check against the criterion that had just been established for `etcd`.
+
+### Why it actually happened
+
+Had not yet turned "stateful vs stateless" into a concrete, mechanically
+repeatable test. `kube-scheduler.yaml` has no `--data-dir` flag anywhere in
+its command list, and its only volume mount is:
+
+```yaml
+volumeMounts:
+- mountPath: /etc/kubernetes/scheduler.conf
+  name: kubeconfig
+```
+
+A `kubeconfig` file holds client credentials, not cluster data — the same
+kind of file `kubectl` itself uses to talk *to* the API server. Nothing here
+stores anything.
+
+### Correct approach
+
+Apply the exact test just confirmed on `etcd`: does the manifest have a
+`--data-dir` flag AND a matching data-holding volume mount? If yes, stateful.
+If the only volume is a kubeconfig or certificate file, the component is a
+stateless client of the API server — restartable with zero data loss, because
+it never held anything to lose.
+
+### Commands used to diagnose
+
+```bash
+docker exec -it k8s-lab-control-plane cat /etc/kubernetes/manifests/kube-scheduler.yaml
+```
+
+Compared its `command:` flags and `volumeMounts:` directly against the
+already-read `etcd.yaml` and `kube-apiserver.yaml`.
+
+### Verification
+
+No `--data-dir` flag present anywhere in `kube-scheduler.yaml`'s command list;
+its sole volume mount is a `kubeconfig` file. This matches the stateless
+pattern already confirmed for `kube-apiserver`, not the stateful pattern
+confirmed for `etcd`.
+
+### Lesson
+
+"Stateful vs stateless" for a Kubernetes control-plane component is not a
+judgment call based on how central or important a component sounds — it is a
+concrete, checkable fact sitting in its own manifest. Once a test like
+"data-dir + data volume, present or absent" is established on one example, it
+should be applied mechanically to the next case, not re-guessed from a fresh
+impression.
+
+---
+
 ## Carried-over lessons from the Docker phase
 
 Not mistakes made in this repository, but hard-won conclusions that will change
