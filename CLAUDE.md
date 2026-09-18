@@ -109,6 +109,24 @@ After any meaningful session, update:
 
 Then commit and push, so the other machine can pick it up.
 
+### README template — fixed, do not redesign per session
+
+`README.md` follows a fixed structure, adopted 2026-09-18 to match the
+`docker-labs` presentation. **Do not restructure it session to session** —
+only update the sections below with new evidence as days complete:
+
+| Section | Updated when |
+|---|---|
+| Header badges | Only when a tool's major version changes (Kubernetes, kind, OS) |
+| "The journey, at a glance" (mermaid) | Only when a phase's status changes (e.g. `IN PROGRESS` moves to the next phase) |
+| "Progress" day-by-day table + `<details>` 30-module table | Every session — add the row, flip its status, update the "Next topic" line |
+| "Mental model" (mermaid diagrams) | **Only add a new diagram when a genuinely new, verified finding earns one** — a live command's output, not theory. One diagram per finding, captioned with the exact day and command. Never diagram ahead of verification |
+| "What I can explain, not just run" | Append one bullet per verified fact from the day just completed — never written ahead of being demonstrated |
+| Everything else (How to use, Quick start, Prerequisites, Lab environment, Working across devices, Repository structure, Projects, Troubleshooting knowledge, Daily learning journal table, Status legend, secrets note, References, License) | Only touch when that section's underlying fact actually changes (a new dependency, a new project started, a new machine added) |
+
+No CI badge, no CI section — CI/CD is Day 93-97 curriculum, not infrastructure
+to build ahead of schedule. Revisit this exclusion only when Day 93 is reached.
+
 ---
 
 ## HARD RULES
