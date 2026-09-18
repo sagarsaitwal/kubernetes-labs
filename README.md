@@ -72,7 +72,7 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 
 ## Progress
 
-**Day 03 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS.** A 3-node
+**Day 04 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS.** A 3-node
 `kind` cluster is running Kubernetes v1.37.0, verified healthy.
 
 | Day | Topic | Status | Evidence |
@@ -80,7 +80,7 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 | 00 | Setup, and what Kubernetes actually is | **Complete** | [journal](journal/daily/day-00-setup-and-what-is-kubernetes.md) |
 | 01 | Cluster setup with `kind`, LAB 01 + break/fix challenge | **Complete** | [journal](journal/daily/day-01-cluster-setup.md) |
 | 02 | Control plane vs worker node, static Pod manifests, CoreDNS finding | **Complete** | [journal](journal/daily/day-02-control-plane-and-nodes.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
-| 03 | Architecture and the request flow | Not started | [lab (queued)](progress/next-steps.md) |
+| 03 | Architecture and the request flow, traced live | **Complete** | [journal](journal/daily/day-03-architecture-request-flow.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 04-05 | kubectl core verbs; namespaces, labels, selectors | Not started | — |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
@@ -93,9 +93,7 @@ bottom of this file.
 
 ### Next topic
 
-Day 03 — Architecture and the request flow: trace `kubectl apply` through all
-14 steps against the live cluster, confirming each step with evidence rather
-than theory alone.
+Day 04 — kubectl core verbs and output formats.
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
@@ -239,6 +237,24 @@ and it is created before the workers finish joining the cluster. Fix
 deliberately deferred to Day 34 (`required` anti-affinity) / Day 36 (topology
 spread) — recorded as a finding, not silently patched.
 
+**A taint filters *before* the scheduler scores — and this is why CoreDNS
+could land somewhere a plain Deployment never will.**
+
+```mermaid
+flowchart LR
+    CP["k8s-lab-control-plane<br/>Taint: node-role.kubernetes.io/control-plane:NoSchedule"]
+    NGINX["nginx-trace Deployment Pod<br/>no matching toleration"] -->|"filtered out<br/>before scoring"| CP
+    NGINX -->|"eligible"| W["worker / worker2"]
+    CORE["CoreDNS Pod<br/>explicit toleration:<br/>control-plane:NoSchedule"] -->|"eligible"| CP
+```
+
+Day 03: applied a plain 3-replica `nginx-trace` Deployment — all three landed
+on the two workers, zero on the control-plane node. `kubectl describe node`
+confirmed the taint; `kubectl describe pod` on a CoreDNS Pod confirmed its
+explicit toleration for that exact taint. This is the missing half of Day
+02's finding: not just *that* CoreDNS ended up on the control-plane node, but
+*why it was ever eligible to* when nothing else is.
+
 ---
 
 ## What I can explain, not just run
@@ -293,6 +309,22 @@ a day and a command behind it. Nothing here is written ahead of being verified.
   `(x2 over 26m)` event count proved an earlier, seemingly-aborted node-failure
   experiment had actually triggered a real transition that nobody saw live,
   because the watch session had already been closed.
+- **Admission/defaulting doesn't need special tooling to observe.** Applied a
+  Deployment with zero tolerations written; `kubectl describe pod` showed two,
+  injected by the `DefaultTolerationSeconds` admission plugin on the way
+  through the API server — the gap between "submitted" and "stored" *is* the
+  proof.
+- **A taint filters candidate nodes before the scheduler ever scores them.**
+  A plain 3-replica Deployment never landed on the control-plane node at all
+  — confirmed its `NoSchedule` taint, then confirmed CoreDNS carries an
+  explicit toleration for that exact taint, closing Day 02's open question
+  about why CoreDNS could land there when nothing else does.
+- **`Restart Count` and `Age`/`Start Time` are not the same signal.** A
+  container restarting inside an existing Pod (seen on CoreDNS, after a node
+  reboot) bumps `Restart Count` but leaves `Age` unchanged; a genuinely new
+  Pod object is what resets `Age`. The same reboot produced both, on
+  different components — worth distinguishing rather than reading either as
+  proof of the other.
 
 ---
 
@@ -533,9 +565,11 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Three entries exist so far, born from real Day 01-02 experiments rather than
+Four entries exist so far, born from real Day 01-03 experiments rather than
 written ahead of time — see the Troubleshooting Knowledge sections in
-[`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md).
+[`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md)
+and
+[`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -559,6 +593,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-16 | [00](journal/daily/day-00-setup-and-what-is-kubernetes.md) | Setup and what is Kubernetes | COMPLETED |
 | 2026-09-16 | [01](journal/daily/day-01-cluster-setup.md) | Cluster setup (LAB 01) | COMPLETED |
 | 2026-09-16 / 09-18 | [02](journal/daily/day-02-control-plane-and-nodes.md) | Control plane vs worker node | COMPLETED |
+| 2026-09-18 | [03](journal/daily/day-03-architecture-request-flow.md) | Architecture and the request flow | COMPLETED |
 
 ---
 

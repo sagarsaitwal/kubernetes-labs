@@ -26,16 +26,18 @@ cd /mnt/d/Kubernetes/fundamentals/labs
 kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
-**Day 02 is now fully COMPLETE** — see
-`journal/daily/day-02-control-plane-and-nodes.md`. Nothing carries over from
-it except the deliberately deferred CoreDNS fix (Day 34/36 — not now).
+**Day 03 is now fully COMPLETE** — see
+`journal/daily/day-03-architecture-request-flow.md`. Nothing carries over
+except the deliberately deferred items below.
 
-### Day 03 — first concrete action
+### Day 04 — first concrete action
 
-Trace `kubectl apply -f deployment.yaml` through all 14 steps from Lesson 01
-against the **live** cluster, confirming each step with real evidence instead
-of taking the theory-only version on trust — the same discipline just applied
-to the static-Pod bootstrap claim on Day 02.
+kubectl core verbs and output formats. No specific first action decided yet —
+start by reading whatever theory file exists for kubectl fundamentals
+(`fundamentals/` — check for one before writing new material), then design a
+lab around the verbs/output-format combinations not yet used incidentally
+(`get`, `describe`, `explain`, `-o json`/`-o yaml`/`-o jsonpath`, `--sort-by`,
+`--field-selector`).
 
 ---
 
@@ -47,8 +49,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 |:--:|---|---|---|
 | 01 | LAB 01 — cluster created, verified, challenge complete | `day-01-cluster-setup.md` | — |
 | 02 | Control plane vs worker node — COMPLETE (heartbeat/taint mechanism, static manifests, stateless/stateful test, CoreDNS placement) | `day-02-control-plane-and-nodes.md` | — |
-| 03 | Architecture and the request flow | `day-03-architecture-request-flow.md` | — |
-| 04 | kubectl core verbs and output formats | `day-04-kubectl-core.md` | Day 03 |
+| 03 | Architecture and the request flow — COMPLETE (steps 6-14 + partial step 4 traced live; CoreDNS taint question closed) | `day-03-architecture-request-flow.md` | — |
+| 04 | kubectl core verbs and output formats | `day-04-kubectl-core.md` | — |
 | 05 | Namespaces, labels, selectors, annotations | `day-05-namespaces-labels-selectors.md` | Day 04 |
 | 06 | Pod anatomy, YAML, lifecycle, phases | `day-06-pod-basics.md` | Day 05 |
 
@@ -77,7 +79,9 @@ scheduled day arrives.
 
 | Finding | Verified on | Fix scheduled |
 |---|---|---|
-| Both CoreDNS replicas landed on `k8s-lab-control-plane` — a real, verified single point of failure, corroborated by identical simultaneous restart counts | Day 02, both machines' clusters | Day 34 (`required` pod anti-affinity) / Day 36 (topology spread constraints) |
+| Both CoreDNS replicas landed on `k8s-lab-control-plane` — a real, verified single point of failure, corroborated by identical simultaneous restart counts; Day 03 confirmed *why it was even eligible* (explicit toleration for the control-plane taint) | Day 02-03, both machines' clusters | Day 34 (`required` pod anti-affinity) / Day 36 (topology spread constraints) |
+| Steps 1-3 and 5 of the request-flow theory (auth, authz, etcd write) not yet directly observed | Day 03 | Day 39-41 (RBAC), Day 45 (a real denial), Day 65/80 (`etcdctl`) |
+| Why only some static Pods (`etcd`, `kube-apiserver`) got a fresh `Age` after a node reboot, while others apparently didn't | Day 03, `Nero` | Day 68 (kubelet/CRI internals) |
 
 ---
 

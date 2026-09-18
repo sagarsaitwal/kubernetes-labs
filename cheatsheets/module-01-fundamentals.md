@@ -2,7 +2,7 @@
 
 Author: Sagar Saitwal
 
-Covers: Day 00 – Day 02. Updated after each day of Module 01.
+Covers: Day 00 – Day 03. Updated after each day of Module 01.
 
 This is **quick reference only** — the reasoning, the mistakes, and the full
 command output live in `journal/daily/`. Come here to look something up fast;
@@ -66,6 +66,20 @@ go there to see how it was actually learned.
 - **A live `-w` watch only shows events while connected.** `kubectl
   describe`'s `Events` section (with counts like `(x2 over 26m)`) is the
   durable record — trust it over terminal scrollback.
+- **Admission/defaulting is directly observable — no special tooling
+  needed.** Diff what you wrote against what `kubectl describe` shows was
+  stored. A manifest with zero tolerations came back with two, injected by
+  the `DefaultTolerationSeconds` admission plugin.
+- **The scheduler filters nodes by taint before it ever scores them.** A
+  Pod with no matching toleration never becomes a candidate for a tainted
+  node — kind's control-plane node carries `node-role.kubernetes.io/
+  control-plane:NoSchedule` by default, which explains why ordinary Pods
+  never land there while explicitly-tolerating system Pods (CoreDNS) can.
+- **`Restart Count` and `Age`/`Start Time` answer different questions.** A
+  container restarting inside an existing Pod bumps `Restart Count` but
+  leaves `Age` unchanged; a genuinely new Pod object resets `Age` to near
+  zero. The same underlying event (a node reboot) can produce either,
+  depending on the component.
 
 ---
 
@@ -87,6 +101,9 @@ go there to see how it was actually learned.
 | `docker ps` | Docker's view of the "nodes" | 1-to-1 with `kubectl get nodes` in a kind cluster |
 | `docker stop <node>` | Simulate ungraceful node failure | Break/fix: watch `NotReady` + taint + eviction |
 | `docker start <node>` | Restore a stopped node | Recovery half of the same experiment |
+| `kubectl apply -f <file>` | Declaratively create/update from a manifest | Default way to submit anything — idempotent, unlike `create` |
+| `kubectl get rs` | List ReplicaSets | Confirm a Deployment actually created one; hash ties Deployment→RS→Pod together |
+| `kubectl get pods -o wide -w` | Live Pod status + `NODE` column | Try to catch `Pending`/`ContainerCreating` — often still too slow, use `describe`'s Events as fallback |
 
 ---
 
@@ -121,6 +138,13 @@ across the two workers. Confirmed via
   single point of failure, not just a theoretical one.
 - **Fix:** deferred to Day 34 (`required` pod anti-affinity) / Day 36
   (topology spread constraints) — deliberately not implemented yet.
+- **Day 03 addendum — why it was ever eligible in the first place:** the
+  control-plane node carries `node-role.kubernetes.io/control-plane:
+  NoSchedule`. A plain Deployment Pod (tested directly: `nginx-trace`, 3
+  replicas, none landed on control-plane) has no toleration for it and is
+  filtered out before scoring. CoreDNS's `Tolerations` block shows it
+  explicitly tolerates that exact taint (plus `CriticalAddonsOnly`) — that's
+  the missing half of the explanation, not a kind-specific accident.
 
 ---
 
@@ -150,11 +174,23 @@ Is a control-plane component stateful?
 Are N replicas of something actually redundant?
    -> kubectl get pods -o wide, read the NODE column for every replica.
    -> repeated node name = shared failure domain = redundancy is fake.
+
+A Pod isn't landing on the node you expected (or a specific node at all)?
+   -> kubectl describe node <name>   -- check Taints:
+   -> kubectl describe pod <name>    -- check Tolerations:
+   -> the scheduler filters out any node whose taints aren't tolerated
+      BEFORE scoring even starts -- a mismatch means "never a candidate,"
+      not "lost on merit."
+
+Did admission actually inject/mutate anything?
+   -> diff what you wrote against `kubectl describe`/`-o yaml` of what got
+      stored -- defaults and injected fields (e.g. tolerationSeconds) show
+      up on their own, no special tooling needed.
 ```
 
 ---
 
-## Interview questions accumulated (Day 00–02)
+## Interview questions accumulated (Day 00–03)
 
 1. What is a reconciliation loop, and why does it make Kubernetes declarative
    rather than imperative?
@@ -183,3 +219,11 @@ Are N replicas of something actually redundant?
     even over `127.0.0.1`?
 14. Why is it possible for a cluster's Pod placement to become "stale"
     relative to its current set of nodes?
+15. `kubectl apply` prints `created`. Which of the 14 request-flow steps does
+    that confirm, and which does it say nothing about?
+16. How would you prove the admission stage actually ran, without reading
+    Kubernetes source code?
+17. Why did a plain Deployment's Pods avoid the control-plane node entirely,
+    while CoreDNS could land there?
+18. What's the difference between a Pod's `Restart Count` and its `Age`, and
+    what does each one actually tell you happened?

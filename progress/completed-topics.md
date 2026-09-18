@@ -14,18 +14,20 @@ verification output was actually seen. Nothing is added optimistically.
 | 2026-09-16 | 00 | 01 | What is Kubernetes; reconciliation loop; control plane vs nodes | — | Theory understood; carried into Day 01 by reading live cluster output |
 | 2026-09-16 | 01 | 01 | Cluster creation, node anatomy, static Pods, DaemonSets, node failure detection (heartbeat/Lease/taints) | LAB 01 (full, incl. challenge) | 3 nodes `Ready`, 12 `kube-system` Pods `Running`, client/server both v1.37.0; challenge: predicted ~40s, observed 44s to `NotReady`, `node-controller` confirmed via Events, DaemonSet Pods confirmed never evicted, full recovery observed |
 | 2026-09-16 / 2026-09-18 | 02 | 01 | Control plane vs worker node — node-failure mechanism (Nero); static Pod manifests, stateless vs stateful test, two HA mechanisms, CoreDNS placement (IT-SAGARS) | Self-directed inspection of live cluster, no formal lab file | All 4 static manifests confirmed on disk; 3 read in full with flags matched against theory; CoreDNS gap found and root-caused with corroborating restart-count evidence |
+| 2026-09-18 | 03 | 01 | Architecture and the request flow — applied a real Deployment, traced steps 6-14 (+ partial 4) of the request-flow theory live | Self-directed trace exercise, no formal lab file | `kubectl get rs`/`get pods`/`describe pod` evidence for ReplicaSet creation, scheduling (`default-scheduler` named), image pull/create/start timing (10s total), and auto-injected tolerations proving admission ran; control-plane taint and CoreDNS's toleration for it both confirmed directly |
 
 ### Findings recorded, fix deliberately deferred
 
 | Item | Where recorded | Fix scheduled |
 |---|---|---|
-| Both CoreDNS replicas on one node (`k8s-lab-control-plane`) — verified real single point of failure | `journal/daily/day-02-control-plane-and-nodes.md` | Day 34 (`required` anti-affinity) / Day 36 (topology spread) |
+| Both CoreDNS replicas on one node (`k8s-lab-control-plane`) — verified real single point of failure, and now explained (explicit toleration for the control-plane taint) | `journal/daily/day-02-control-plane-and-nodes.md`, `day-03-architecture-request-flow.md` | Day 34 (`required` anti-affinity) / Day 36 (topology spread) |
 
 ### Not yet complete
 
 | Item | Why it is not marked complete |
 |---|---|
-| Day 03 — Architecture and the request flow | Not yet started |
+| Request-flow steps 1-3, 5 (auth, authz, etcd write) | No tooling yet to observe directly — deferred to Day 39-41, 45, 65/80 |
+| Day 04 — kubectl core verbs and output formats | Not yet started |
 
 ---
 

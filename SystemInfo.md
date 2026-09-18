@@ -58,7 +58,7 @@ Last verified: 2026-09-18
 
 ### Nero
 
-Last verified: 2026-09-16
+Last verified: 2026-09-18
 
 | Item | Value |
 |---|---|
@@ -73,7 +73,11 @@ Last verified: 2026-09-16
 | Disk free | 953 GiB |
 | `kubectl` | v1.37.0 — installed 2026-09-16 via `setup-machine.sh` |
 | `kind` | v0.33.0 — installed 2026-09-16 via `setup-machine.sh` |
-| `k8s-lab` cluster | created 2026-09-16, 3/3 nodes `Ready` (verified) |
+| `k8s-lab` cluster | same cluster created 2026-09-16, survived a Docker/WSL restart (node containers showed `Up 16s` on 2026-09-18 before settling) — 3/3 nodes `Ready`, re-verified 2026-09-18 via `check-dependencies.sh`. **Not** the same cluster object as the one on `IT-SAGARS` — see Day 02 journal note |
+
+> Note: `hostname` still returns empty in a non-interactive shell on this
+> machine — same gap `setup-machine.sh` was fixed for on 2026-09-16.
+> `hostnamectl --static` / `/etc/hostname` work and confirm this is `Nero`.
 
 > Note from 2026-09-16: despite matching Docker version and cgroup mode with
 > IT-SAGARS, this machine had **no `kubectl`, no `kind`, no cluster** — a
