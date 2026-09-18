@@ -56,13 +56,14 @@ Advanced Kubernetes  ->  CKA / CKAD / CKS
 
 ## Current progress
 
-**Day 02 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS**
+**Day 03 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS**
 
 A 3-node `kind` cluster is running Kubernetes v1.37.0, verified healthy. Day 01
-is complete, including the node-failure break/fix challenge. Day 02 (control
-plane vs worker node) is underway — the node heartbeat/Lease/taint mechanism
-has been taught and verified live; static Pod manifests, CoreDNS placement,
-and the remaining control-plane components are still to inspect.
+and Day 02 are both complete — including the node-failure break/fix challenge,
+a full read of the `kube-apiserver`, `etcd`, and `kube-scheduler` static Pod
+manifests, and a real, verified finding: both CoreDNS replicas landed on the
+same node (fix deliberately deferred to Day 34/36). Day 03 — architecture and
+the request flow — starts next.
 
 | | |
 |---|---|
@@ -108,9 +109,9 @@ verification output was actually seen.**
 
 ### Next topic
 
-Finish Day 02 — Control Plane vs Worker Node: static Pod manifest check,
-CoreDNS placement re-check, and the remaining control-plane components
-(`etcd`, `kube-scheduler`, `kube-controller-manager`).
+Day 03 — Architecture and the request flow: trace `kubectl apply` through all
+14 steps against the live cluster, confirming each step with evidence rather
+than theory alone.
 
 ---
 
@@ -264,6 +265,7 @@ kubernetes-learning/
 |   |-- TEMPLATE-daily-entry.md      Fixed section layout for new entries
 |   |-- mistakes-and-lessons.md      Accumulated failures, searchable by symptom
 |
+|-- cheatsheets/              Running quick-reference per module (commands, flags, concepts)
 |-- fundamentals/             Module 01-03: architecture, kubectl, namespaces, labels, API
 |-- workloads/                Pods, ReplicaSets, Deployments, StatefulSets, DaemonSets, Jobs, CronJobs
 |-- networking/               Pod networking, Services, DNS, Ingress, NetworkPolicy, CNI
@@ -348,7 +350,7 @@ the fix, the verification, the lesson, and what comes next.
 |---|---|---|---|
 | 2026-09-16 | [00](journal/daily/day-00-setup-and-what-is-kubernetes.md) | Setup and what is Kubernetes | COMPLETED |
 | 2026-09-16 | [01](journal/daily/day-01-cluster-setup.md) | Cluster setup (LAB 01) | COMPLETED |
-| 2026-09-16 | [02](journal/daily/day-02-control-plane-and-nodes.md) | Control plane vs worker node | IN PROGRESS |
+| 2026-09-16 / 09-18 | [02](journal/daily/day-02-control-plane-and-nodes.md) | Control plane vs worker node | COMPLETED |
 
 ---
 

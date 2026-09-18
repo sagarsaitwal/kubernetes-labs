@@ -2,12 +2,12 @@
 
 Author: Sagar Saitwal
 
-Last updated: 2026-09-16
+Last updated: 2026-09-18
 
 > This file is the single source of truth for where the learning stopped.
 > On any new session or new device, read this file FIRST.
 
-**Current Day: 02**
+**Current Day: 03**
 
 > The line above is machine-readable. `scripts/utilities/check-dependencies.sh`
 > parses it to decide which dependencies this day actually requires. Keep the
@@ -17,7 +17,7 @@ Last updated: 2026-09-16
 
 ## Machine this session ran on
 
-**Nero** — see `SystemInfo.md` (repository root) for full per-machine tool
+**IT-SAGARS** — see `SystemInfo.md` (repository root) for full per-machine tool
 versions and the cross-machine dependency table. If the next session is on a
 different machine, `kubectl`/`kind`/the cluster will legitimately be missing —
 expected, not a failure. Recreate:
@@ -38,79 +38,83 @@ Module 01 — Kubernetes Fundamentals
 
 ## Current Topic
 
-Day 01 COMPLETED. Day 02 — Control Plane vs Worker Node — IN PROGRESS.
+Day 02 COMPLETED. Next: Day 03 — Architecture and the request flow.
 
 ## Current Subtopic
 
-Node health detection (heartbeats, Lease objects, Node Lifecycle Controller,
-taints) — taught and verified live. Still to do: static Pod manifests on disk,
-CoreDNS placement re-check, remaining control-plane components.
+Day 03 has not started. First action: trace `kubectl apply -f deployment.yaml`
+through all 14 steps against the live cluster, confirming each step rather
+than taking Lesson 01's theory-only version on trust.
 
 ## Learning Status
 
 🟡 IN PROGRESS
 
-Day 00 and Day 01 are fully COMPLETED, including the LAB 01 challenge. Day 02
-has started — the node-failure/recovery mechanism (its actual subject matter)
-was taught and directly observed via that challenge. Two verification items
-and the rest of Day 02 remain.
+Day 00, Day 01, and Day 02 are all fully COMPLETED. Day 03 is next.
 
 ## Last Completed Lab
 
-**LAB 01 — Set up the Kubernetes learning environment.** COMPLETED.
-
-Cluster created, fully verified, and the break/fix challenge (stop a worker
-node, predict, observe, recover) completed with real timed output.
+**Day 02 — static Pod manifest inspection and CoreDNS placement check.**
+COMPLETED. `etcd.yaml`, `kube-apiserver.yaml`, and `kube-scheduler.yaml` all
+read in full on the live cluster; CoreDNS placement checked and a real
+single-point-of-failure finding confirmed with corroborating evidence.
 
 ## Last Commands Practiced
 
 ```bash
-kubectl get nodes -w                        # stream node status changes live
-date; docker stop k8s-lab-worker2           # simulate node failure, timestamped
-kubectl describe node k8s-lab-worker2       # taints, conditions, Lease, Events
-docker start k8s-lab-worker2                # restore the node
+docker exec -it k8s-lab-control-plane ls -l /etc/kubernetes/manifests/
+docker exec -it k8s-lab-control-plane cat /etc/kubernetes/manifests/kube-apiserver.yaml
+docker exec -it k8s-lab-control-plane cat /etc/kubernetes/manifests/etcd.yaml
+docker exec -it k8s-lab-control-plane cat /etc/kubernetes/manifests/kube-scheduler.yaml
+kubectl get pods -n kube-system -o wide | grep coredns
 ```
 
 ## Last YAML Practiced
 
-None new today — used the existing `fundamentals/labs/kind-cluster-config.yaml`
-cluster from Day 01.
+None hand-written yet — read three existing static Pod manifests
+(`kube-apiserver.yaml`, `etcd.yaml`, `kube-scheduler.yaml`) rather than
+authoring new YAML. First hand-written YAML is Day 06 (Pod basics).
 
 ## What I Learned
 
-- **The worker reports in; the control plane never polls it.** Each kubelet
-  renews a small `Lease` object roughly every 10s. The Node Lifecycle
-  Controller (inside `kube-controller-manager`) watches these leases, not the
-  node directly.
-- **`node-monitor-grace-period` (default 40s)** is how long a missed heartbeat
-  is tolerated before a node flips to `NotReady`. Measured directly: 44s from
-  `docker stop` to the `Ready` condition's `LastTransitionTime`.
-- **A taint doesn't decide a Pod's fate — its owning controller does.**
-  `NoExecute` on an unreachable node gives ordinary Pods 300s
-  (`tolerationSeconds`) before eviction and rescheduling by their
-  ReplicaSet/Deployment. DaemonSet Pods get an automatic, **indefinite**
-  toleration for the same taint — they are never evicted by it, because a
-  DaemonSet's contract ("one per node") has no "elsewhere" to reschedule to.
-- **`kubectl get nodes -w` fires on every watch event, not every visible
-  change.** Multiple identical-looking lines can mean multiple underlying
-  writes (e.g. several conditions flipping in sequence).
-- **Event history beats terminal scrollback.** A `(x2 over 26m)` count on a
-  `NodeNotReady` event proved an earlier, seemingly-aborted experiment had
-  actually triggered a real transition nobody saw live.
+- **Static Pod manifests exist exactly where theory said**, timestamped
+  identically at cluster bootstrap, root-only permissions, and missing the two
+  files (`kube-proxy`, `kindnet`) that theory said would be missing because
+  they're DaemonSets, not static Pods.
+- **Stateless vs stateful has a concrete, checkable test:** `--data-dir` plus a
+  real data volume mount means stateful (`etcd`, the only one on this
+  cluster); a kubeconfig/cert-only volume means stateless (`kube-apiserver`,
+  `kube-scheduler`, `kube-controller-manager`).
+- **Two different HA mechanisms live in one control plane:** `etcd` uses Raft
+  consensus (all members vote on every write); `kube-scheduler` and
+  `kube-controller-manager` use `--leader-elect=true` (one active leader,
+  the rest idle standbys). Different because one is stateful and one isn't.
+- **`kube-apiserver` and `etcd` trust nothing by default, not even
+  localhost** — `--client-cert-auth=true` on etcd's side, matching client
+  certificate flags on the apiserver's side. Verified by reading both files
+  and matching the flags.
+- **CoreDNS has a real, verified single point of failure on this cluster** —
+  both replicas on the control-plane node, confirmed by the `NODE` column and
+  corroborated by identical, simultaneous restart counts. Root cause: CoreDNS
+  is created before workers finish joining, and Kubernetes never re-schedules
+  an already-running Pod just because a better node appears later.
+- **A concrete test, once established, should be applied mechanically** — not
+  re-guessed from impression. This is exactly what went wrong with
+  `kube-scheduler.yaml` (see What I Broke).
 
 ## What I Broke
 
-Deliberately: `k8s-lab-worker2` stopped via `docker stop` to observe node
-failure detection (the LAB 01 challenge). Restored via `docker start`.
+Nothing in the cluster. Got a classification wrong (see Mistakes Made) —
+recorded, not hidden.
 
 ## Errors Encountered
 
-None — this was a deliberate, successful experiment, not a failure to
-diagnose.
+None — inspection only, no mutating commands run against the live objects.
 
 ## Root Cause
 
-N/A
+N/A for this session (see Mistakes Made for the one wrong answer's root
+cause).
 
 ## How It Was Fixed
 
@@ -118,51 +122,55 @@ N/A
 
 ## Mistakes Made
 
-- First challenge attempt: interrupted the watch and restarted the node
-  **before** the 40s grace period elapsed, then read stale cached Pod status
-  as if it were live confirmation. Nothing had actually been tested yet.
-  Lesson: before concluding "nothing happened," confirm enough time actually
-  passed for something to happen.
+- Classified `kube-scheduler.yaml` as "stateful" on first attempt, immediately
+  after correctly classifying `kube-apiserver` (stateless) and `etcd`
+  (stateful) using the same file. Root cause: hadn't yet turned the
+  distinction into a mechanical test (`--data-dir` + data volume, present or
+  absent) — answered from impression instead of checking the file's own
+  volume mounts. Full detail: `journal/mistakes-and-lessons.md`, Mistake 002.
 
 ## Important Lessons
 
-- A Pod's last-reported status is frozen at whatever the kubelet said last
-  once its node stops reporting — it is not re-verified by anyone until the
-  node comes back.
-- `kubectl describe <object>`'s `Events` section is the reliable record of
-  what happened; a live `-w` session only shows you events while you're
-  actually connected and watching.
+- A concrete, checkable test beats a general impression every time — "does
+  this sound important" is not a substitute for "does this file have a
+  `--data-dir` flag."
+- Corroborating evidence often sits in output already on screen for another
+  reason — the CoreDNS restart counts weren't specifically searched for, but
+  confirmed the finding more strongly than the placement column alone.
+- Kubernetes' scheduler places a Pod once, at creation, and never
+  re-evaluates already-running Pods — a cluster's layout can go stale purely
+  from *when* something happened to be created relative to which nodes
+  existed yet.
 
 ## Unresolved Issues
 
-1. Verify static Pod manifests directly on disk:
-   ```bash
-   docker exec -it k8s-lab-control-plane ls -l /etc/kubernetes/manifests/
-   ```
-2. Confirm CoreDNS replica placement by hand:
-   ```bash
-   kubectl get pods -n kube-system -o wide | grep coredns
-   ```
-3. Continue Day 02 — inspect `etcd`, `kube-scheduler`, `kube-controller-manager`
-   on the live cluster.
+None blocking. One forward-looking item, not urgent:
+
+1. CoreDNS anti-affinity fix (`required` affinity or topology spread
+   constraints) is a real, verified gap on this cluster. Deliberately
+   deferred to Day 34/36 — not a Day 02/03 task.
 
 ## Next Topic
 
-Finish Day 02 — Control Plane vs Worker Node.
+Day 03 — Architecture and the request flow: `kubectl` → API server → etcd →
+controller → scheduler → kubelet → container runtime, confirmed live rather
+than taken on theory alone from Lesson 01.
 
 ## Next Lab
 
-Continue `journal/daily/day-02-control-plane-and-nodes.md` — start with the two
-unresolved verification commands above, then the remaining control-plane
-components.
+LAB 03 — trace a real `kubectl apply` through the cluster and match each of
+the 14 steps from Lesson 01 to something observable (API server logs, etcd
+writes via `etcdctl` where possible, scheduler decisions, kubelet actions).
+
+File not yet written: `journal/daily/day-03-architecture-request-flow.md`
 
 ## Overall Progress
 
-Day 01 of 130 COMPLETE. Day 02 IN PROGRESS. 0 of 30 modules completed, 1 in
-progress. 0 of 10 projects.
+Day 02 of 130 COMPLETE. Day 03 starting next session. 0 of 30 modules
+completed, 1 in progress. 0 of 10 projects.
 
 ```text
-[                              ] 2%
+[■                             ] 2%
 ```
 
 Full day-by-day plan: `progress/daily-plan.md`

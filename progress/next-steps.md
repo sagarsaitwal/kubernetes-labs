@@ -2,15 +2,15 @@
 
 Author: Sagar Saitwal
 
-Last updated: 2026-09-16
+Last updated: 2026-09-18
 
 ---
 
 ## Immediate next action
 
-Session continues on the **same machine (`Nero`)** unless stated otherwise —
-check `SystemInfo.md` at the repository root to confirm before assuming. Start
-with the resume ritual:
+Session continues on **whichever machine you resume on** — check `SystemInfo.md`
+at the repository root to confirm which one before assuming. Start with the
+resume ritual:
 
 ```bash
 cd /mnt/d/Kubernetes && git pull
@@ -26,22 +26,16 @@ cd /mnt/d/Kubernetes/fundamentals/labs
 kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
-Day 01's LAB 01 challenge is now **done** — see
-`journal/daily/day-01-cluster-setup.md`. Two smaller items carry over into
-finishing Day 02:
+**Day 02 is now fully COMPLETE** — see
+`journal/daily/day-02-control-plane-and-nodes.md`. Nothing carries over from
+it except the deliberately deferred CoreDNS fix (Day 34/36 — not now).
 
-### Carried over from Day 01 into Day 02
+### Day 03 — first concrete action
 
-| # | Item | Command |
-|:--:|---|---|
-| 1 | See static Pod manifests on disk — the files the kubelet starts without an API server | `docker exec -it k8s-lab-control-plane ls -l /etc/kubernetes/manifests/` |
-| 2 | Check whether both CoreDNS replicas landed on the same node | `kubectl get pods -n kube-system -o wide \| grep coredns` |
-
-Then continue Day 02 with the remaining control-plane components (`etcd`,
-`kube-scheduler`, `kube-controller-manager`) on the live cluster — the
-node-failure/recovery half of Day 02 (heartbeats, Lease objects, the Node
-Lifecycle Controller, taints) is already done; see
-`journal/daily/day-02-control-plane-and-nodes.md`.
+Trace `kubectl apply -f deployment.yaml` through all 14 steps from Lesson 01
+against the **live** cluster, confirming each step with real evidence instead
+of taking the theory-only version on trust — the same discipline just applied
+to the static-Pod bootstrap claim on Day 02.
 
 ---
 
@@ -52,8 +46,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 | Day | Item | Journal file | Blocked by |
 |:--:|---|---|---|
 | 01 | LAB 01 — cluster created, verified, challenge complete | `day-01-cluster-setup.md` | — |
-| 02 | Control plane vs worker node — heartbeat/taint mechanism done; manifests + CoreDNS check + remaining components outstanding | `day-02-control-plane-and-nodes.md` | — |
-| 03 | Architecture and the request flow | `day-03-architecture-request-flow.md` | Day 02 |
+| 02 | Control plane vs worker node — COMPLETE (heartbeat/taint mechanism, static manifests, stateless/stateful test, CoreDNS placement) | `day-02-control-plane-and-nodes.md` | — |
+| 03 | Architecture and the request flow | `day-03-architecture-request-flow.md` | — |
 | 04 | kubectl core verbs and output formats | `day-04-kubectl-core.md` | Day 03 |
 | 05 | Namespaces, labels, selectors, annotations | `day-05-namespaces-labels-selectors.md` | Day 04 |
 | 06 | Pod anatomy, YAML, lifecycle, phases | `day-06-pod-basics.md` | Day 05 |
@@ -73,6 +67,17 @@ node failure and rescheduling. Cost is ~1.2 GiB of 7.0 GiB available.
 
 Reversible. **Revisit after Module 11**, when there is enough scheduling
 knowledge to evaluate the reasoning independently.
+
+---
+
+## Findings awaiting a scheduled fix
+
+Not blocking — recorded here so they are not silently forgotten before their
+scheduled day arrives.
+
+| Finding | Verified on | Fix scheduled |
+|---|---|---|
+| Both CoreDNS replicas landed on `k8s-lab-control-plane` — a real, verified single point of failure, corroborated by identical simultaneous restart counts | Day 02, both machines' clusters | Day 34 (`required` pod anti-affinity) / Day 36 (topology spread constraints) |
 
 ---
 
@@ -101,17 +106,5 @@ kubectl get nodes             # does a cluster already exist here?
 kind get clusters             # which kind clusters exist on this machine?
 ```
 
-Recorded values from the original environment (2026-09-16):
-
-| Fact | Value |
-|---|---|
-| Host | Windows 11 Pro |
-| Linux | WSL2, FedoraLinux-44 |
-| Kernel | 6.18.33.2-microsoft-standard-WSL2 |
-| Architecture | x86_64 |
-| cgroup | cgroup2fs (v2 unified) |
-| systemd | active |
-| Docker | Engine 29.7.2, installed inside Fedora, not Docker Desktop |
-| CPU | 8 |
-| Memory | 7.6 GiB total |
-| Disk free | 952 GiB |
+Per-machine values are tracked in `SystemInfo.md` (quick lookup) and
+`progress/environments.md` (full detail and reasoning).

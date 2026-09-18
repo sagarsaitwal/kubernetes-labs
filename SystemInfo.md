@@ -39,7 +39,7 @@ two different physical machines, so hostname is the only reliable check.
 
 ### IT-SAGARS
 
-Last verified: 2026-09-16
+Last verified: 2026-09-18
 
 | Item | Value |
 |---|---|
@@ -50,11 +50,11 @@ Last verified: 2026-09-16
 | cgroup | cgroup2fs (v2 unified) |
 | Docker | Engine 29.7.2 |
 | CPU | 8 cores |
-| Memory | 7.6 GiB total |
+| Memory | 7.6 GiB total (6 GiB available at last check) |
 | Disk free | 952 GiB |
 | `kubectl` | v1.37.0 |
 | `kind` | v0.33.0 |
-| `k8s-lab` cluster | created 2026-09-16 (Day 01) — **not re-verified since**; clusters do not survive a WSL/Docker restart being assumed healthy, confirm with `kind get clusters` before trusting this line |
+| `k8s-lab` cluster | created 2026-09-16 (Day 01), **re-verified 2026-09-18** via `check-dependencies.sh` — 3/3 nodes `Ready`, server v1.37.0, uptime spans both Day 01 and Day 02 work on this machine |
 
 ### Nero
 
