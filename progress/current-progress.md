@@ -2,12 +2,12 @@
 
 Author: Sagar Saitwal
 
-Last updated: 2026-09-18
+Last updated: 2026-09-21
 
 > This file is the single source of truth for where the learning stopped.
 > On any new session or new device, read this file FIRST.
 
-**Current Day: 04**
+**Current Day: 05**
 
 > The line above is machine-readable. `scripts/utilities/check-dependencies.sh`
 > parses it to decide which dependencies this day actually requires. Keep the
@@ -17,10 +17,10 @@ Last updated: 2026-09-18
 
 ## Machine this session ran on
 
-**Nero** — see `SystemInfo.md` (repository root) for full per-machine tool
-versions and the cross-machine dependency table. If the next session is on a
-different machine, `kubectl`/`kind`/the cluster will legitimately be missing —
-expected, not a failure. Recreate:
+**IT-SAGARS** — see `SystemInfo.md` (repository root) for full per-machine
+tool versions and the cross-machine dependency table. If the next session is
+on a different machine, `kubectl`/`kind`/the cluster will legitimately be
+missing — expected, not a failure. Recreate:
 
 ```bash
 cd /mnt/d/Kubernetes && git pull
@@ -38,156 +38,139 @@ Module 01 — Kubernetes Fundamentals
 
 ## Current Topic
 
-Day 03 COMPLETED. Day 04 — kubectl core verbs and output formats — **queued,
-not started.** Teaching content was prepared and given in the previous
-session (verb families, `kubectl explain`, output formats, `diff`/`dry-run`,
-`logs`/`exec`), but **no commands were actually run** — session ended before
-any hands-on work happened. Do not treat this as progress; resume from the
-plan below.
+Day 04 COMPLETED. Day 05 — Namespaces, labels, selectors, annotations —
+**not yet started.**
 
 ## Current Subtopic
 
-Day 04 has not started. Resume with the six queued commands below — the
-explanation for each was already given last session; re-explain only if it's
-been long enough that a refresher is warranted, otherwise go straight to
-running them.
-
-```bash
-# 1. Full stored object — compare mentally against fundamentals/labs/nginx-deployment.yaml
-kubectl get deployment nginx-trace -o yaml
-
-# 2. Extract one exact field with jsonpath
-kubectl get deployment nginx-trace -o jsonpath='{.spec.template.spec.containers[0].image}'
-
-# 3. See admission's effect BEFORE creating anything (dry-run=server)
-kubectl apply -f fundamentals/labs/nginx-deployment.yaml --dry-run=server -o yaml | grep -A3 tolerations
-
-# 4. A custom table, sorted
-kubectl get pods -o custom-columns='NAME:.metadata.name,NODE:.spec.nodeName,RESTARTS:.status.containerStatuses[0].restartCount' --sort-by='.status.containerStatuses[0].restartCount'
-
-# 5. Read one Pod's logs
-kubectl logs <one of the nginx-trace pods — check `kubectl get pods` for current names>
-
-# 6. Run a command inside it
-kubectl exec -it <same pod> -- cat /etc/nginx/nginx.conf
-```
-
-Note: `nginx-trace` was still running and healthy (3/3, 34m old) as of last
-session, on `Nero`. Re-verify it's still there before assuming — if this
-session is on a different machine or the cluster was recreated, it won't be.
+Day 05 has not started. No teaching content prepared yet — this is a fresh
+topic for next session.
 
 ## Learning Status
 
 🟡 IN PROGRESS
 
-Day 00, Day 01, Day 02, and Day 03 are all fully COMPLETED. Day 04 is next.
+Day 00 through Day 04 are all fully COMPLETED. Day 05 is next.
 
 ## Last Completed Lab
 
-**Day 03 — traced `kubectl apply` through the live cluster.** COMPLETED.
-Applied a plain `nginx-trace` Deployment; confirmed steps 6-14 of Lesson 01's
-14-step flow with real `kubectl`/`describe` evidence, plus a partial
-confirmation of step 4 (admission/defaulting, via auto-injected tolerations).
-Also closed Day 02's open CoreDNS-placement question by confirming the
-control-plane node's `NoSchedule` taint and CoreDNS's explicit toleration for
-it.
+**Day 04 — kubectl core verbs and output formats.** COMPLETED. Ran and
+interpreted six commands (`-o yaml`, `-o jsonpath`, `--dry-run=server`,
+`-o custom-columns` + `--sort-by`, `logs`, `exec`) against `nginx-trace`,
+recreated fresh on this machine's cluster. Along the way: recovered a
+stopped `k8s-lab-control-plane` container (`docker start`, no data lost),
+and diagnosed a real `ErrImagePull` failure to a corporate TLS-inspecting
+proxy (Zscaler) — confirmed via the exact `x509: certificate signed by
+unknown authority` error in the Pod's Events, fixed by disabling the proxy
+and forcing a retry with `kubectl rollout restart`. New finding: `--dry-run=
+server` only previews admission on the submitted object, not on anything a
+controller creates afterward — the Day 03 toleration injection (which
+happens on the Pod, not the Deployment) correctly did not show up here.
 
 ## Last Commands Practiced
 
 ```bash
-kubectl apply -f fundamentals/labs/nginx-deployment.yaml
-kubectl get pods -o wide -w
-kubectl describe pod <nginx-trace pod>
-kubectl get rs
-kubectl describe node k8s-lab-control-plane
-kubectl describe pod -n kube-system <coredns pod>
+docker ps -a --filter "name=k8s-lab" --format 'table {{.Names}}\t{{.Status}}'
+docker start k8s-lab-control-plane
+kubectl apply -f nginx-deployment.yaml
+kubectl get deployment nginx-trace -o yaml
+kubectl get deployment nginx-trace -o jsonpath='{.spec.template.spec.containers[0].image}'
+kubectl apply -f nginx-deployment.yaml --dry-run=server -o yaml
+kubectl get pods -o custom-columns='NAME:.metadata.name,NODE:.spec.nodeName,RESTARTS:.status.containerStatuses[0].restartCount' --sort-by='.status.containerStatuses[0].restartCount'
+kubectl describe pod <pod> | grep -A5 Events
+kubectl rollout restart deployment nginx-trace
+kubectl logs <pod>
+kubectl exec -it <pod> -- cat /etc/nginx/nginx.conf
 ```
 
 ## Last YAML Practiced
 
-`fundamentals/labs/nginx-deployment.yaml` — written for the exercise, not
-authored by Sagar (first hand-written YAML is still Day 06).
+`fundamentals/labs/nginx-deployment.yaml` — same file reused from Day 03
+(reapplied here because clusters don't travel between machines).
 
 ## What I Learned
 
-- **`kubectl apply` is idempotent by design** — it diffs against desired
-  state rather than erroring on an existing object, which is Lesson 01's
-  reconciliation loop made concrete.
-- **Admission/defaulting is directly observable** — diff what was written
-  against what `kubectl describe` shows was stored. Our manifest specified
-  zero tolerations; the stored Pod had two, injected by the
-  `DefaultTolerationSeconds` admission plugin.
-- **The scheduler filters nodes by taint before it ever scores them.** All
-  three plain Deployment Pods landed only on workers — `k8s-lab-control-
-  plane` carries `node-role.kubernetes.io/control-plane:NoSchedule`, which
-  an ordinary Pod doesn't tolerate.
-- **This closes Day 02's open question:** CoreDNS carries an explicit
-  toleration for that exact taint, which is *why* it was ever eligible to
-  land on the control-plane node in the first place.
-- **`Restart Count` (container-level) and `Age`/`Start Time` (Pod-object
-  level) are different signals** that can diverge after the same event — a
-  container restarting inside an existing Pod is not the same as a new Pod
-  object being created.
+- `-o yaml` shows the fully stored object, including everything admission
+  and defaulting added beyond what was written by hand.
+- `-o jsonpath` prints with no trailing newline by design — easy to mistake
+  for "no output" when reading a terminal directly.
+- **`--dry-run=server` only previews admission on the object you submit** —
+  not on objects a controller will create afterward (Deployment → ReplicaSet
+  → Pod). The Day 03 toleration injection happens at Pod creation, a
+  separate API call, so a Deployment dry-run correctly shows nothing.
+- `docker ps` hides stopped containers by default; `-a` is required to tell
+  "stopped" apart from "gone."
+- A local cluster's container runtime (`containerd`, inside each kind node)
+  has its own TLS trust store, independent of the host OS — corporate
+  TLS-inspection proxies the browser handles transparently can still break
+  image pulls inside it.
+- `ErrImagePull` → `ImagePullBackOff` is a progression (first failure, then
+  retry/backoff state), not two different problems.
 
 ## What I Broke
 
-Nothing — one straightforward `apply`, otherwise inspection only.
+Nothing broken by anything run today. Two things found broken and fixed —
+see Mistakes Made below.
 
 ## Errors Encountered
 
-None.
+```text
+tls: failed to verify certificate: x509: certificate signed by unknown authority
+```
+(on all 3 `nginx-trace` Pods, pulling `nginx:1.27-alpine`)
 
 ## Root Cause
 
-N/A
+Zscaler (corporate TLS-inspecting proxy) intercepting the HTTPS connection
+to `registry-1.docker.io`; `containerd` inside the kind node rejected the
+proxy's re-signed certificate as untrusted.
 
 ## How It Was Fixed
 
-N/A
+Disabled Zscaler; `kubectl rollout restart deployment nginx-trace` to force
+fresh Pods and fresh pull attempts. All 3 reached `1/1 Running`.
 
 ## Mistakes Made
 
-None new today. The live watch (`kubectl get pods -o wide -w`) again started
-too late to catch a transient state — a repeat of a known pattern (Day 01),
-not a new failure mode, so not given its own `mistakes-and-lessons.md` entry.
+**Mistake 003** (see `journal/mistakes-and-lessons.md`) — named Zscaler as
+the likely cause before checking the Pod's actual `Events` text. Turned out
+correct, but the lesson is to confirm with the literal error message first,
+since `ErrImagePull` looks identical whether the real cause is TLS, DNS, or
+network path.
 
 ## Important Lessons
 
-- `kubectl describe`'s `Events` history is the reliable fallback whenever a
-  live watch starts too late — now confirmed twice (Day 02, Day 03).
-- Injected defaults from admission show up for free in `describe` output;
-  no special technique needed beyond comparing "what I wrote" to "what got
-  stored."
+- `docker ps -a` (not plain `docker ps`) is the right first check whenever a
+  cluster container seems to have "disappeared."
+- Read the exact `Events` error text before naming a root cause, even when a
+  guess turns out right.
 
 ## Unresolved Issues
 
-None blocking. Carried forward, not urgent:
+None blocking. Carried forward, unchanged from Day 03:
 
-1. Steps 1-3 (client encode/POST, authn, authz) and step 5 (etcd write)
-   of the request flow remain theory-plus-inference — deferred to Day 39-41,
-   Day 45, and Day 65/80 respectively.
-2. Why `etcd`/`kube-apiserver` got fresh Pod objects after today's node
-   reboot while other static Pods apparently didn't — deferred to Day 68
-   (kubelet/CRI internals).
-3. CoreDNS anti-affinity fix — deliberately deferred to Day 34/36 (unchanged
-   from Day 02).
+1. Steps 1-3 (client encode/POST, authn, authz) and step 5 (etcd write) of
+   the request flow — deferred to Day 39-41, Day 45, Day 65/80.
+2. Why only some static Pods got a fresh `Age` after a node reboot —
+   deferred to Day 68.
+3. CoreDNS anti-affinity fix — deliberately deferred to Day 34/36.
 
 ## Next Topic
 
-Day 04 — kubectl core verbs and output formats.
+Day 05 — Namespaces, labels, selectors, annotations.
 
 ## Next Lab
 
-LAB 04 — not yet written. File to create:
-`journal/daily/day-04-kubectl-core.md`.
+LAB 05 — not yet written. File to create:
+`journal/daily/day-05-namespaces-labels-selectors.md`.
 
 ## Overall Progress
 
-Day 03 of 130 COMPLETE. Day 04 starting next session. 0 of 30 modules
+Day 04 of 130 COMPLETE. Day 05 starting next session. 0 of 30 modules
 completed, 1 in progress. 0 of 10 projects.
 
 ```text
-[■                             ] 2%
+[■                             ] 3%
 ```
 
 Full day-by-day plan: `progress/daily-plan.md`

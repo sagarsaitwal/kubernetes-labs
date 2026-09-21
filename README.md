@@ -81,7 +81,8 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 | 01 | Cluster setup with `kind`, LAB 01 + break/fix challenge | **Complete** | [journal](journal/daily/day-01-cluster-setup.md) |
 | 02 | Control plane vs worker node, static Pod manifests, CoreDNS finding | **Complete** | [journal](journal/daily/day-02-control-plane-and-nodes.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 03 | Architecture and the request flow, traced live | **Complete** | [journal](journal/daily/day-03-architecture-request-flow.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
-| 04-05 | kubectl core verbs; namespaces, labels, selectors | Not started | — |
+| 04 | kubectl output formats, `--dry-run=server` scope, image-pull troubleshooting | **Complete** | [journal](journal/daily/day-04-kubectl-core.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
+| 05 | Namespaces, labels, selectors, annotations | Not started | [lab (queued)](progress/next-steps.md) |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
 Where work stopped: [`progress/current-progress.md`](progress/current-progress.md)
@@ -93,7 +94,7 @@ bottom of this file.
 
 ### Next topic
 
-Day 04 — kubectl core verbs and output formats.
+Day 05 — Namespaces, labels, selectors, annotations.
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
@@ -255,6 +256,28 @@ explicit toleration for that exact taint. This is the missing half of Day
 02's finding: not just *that* CoreDNS ended up on the control-plane node, but
 *why it was ever eligible to* when nothing else is.
 
+**`--dry-run=server` only previews admission on the object you submit — not
+on anything a controller creates afterward.**
+
+```mermaid
+flowchart LR
+    subgraph Dryrun["kubectl apply --dry-run=server (Deployment)"]
+        direction LR
+        D1["Deployment request"] --> AD["admission runs<br/>on the Deployment"] --> R1["previewed, not persisted"]
+    end
+    subgraph Real["kubectl apply (real)"]
+        direction LR
+        D2["Deployment created"] --> RC["ReplicaSet controller<br/>creates Pod<br/>(separate API call)"] --> AP["admission runs<br/>on the Pod"] --> T["tolerations injected here"]
+    end
+```
+
+Day 04: dry-running the same Deployment that got tolerations injected on
+Day 03 and grepping for `tolerations` returned nothing — correctly. The
+injection happens when the ReplicaSet controller creates the Pod, a separate
+API call made *after* the Deployment already exists; dry-run only previews
+the one request actually submitted, not the reconciliation cascade it goes
+on to trigger.
+
 ---
 
 ## What I can explain, not just run
@@ -325,6 +348,20 @@ a day and a command behind it. Nothing here is written ahead of being verified.
   Pod object is what resets `Age`. The same reboot produced both, on
   different components — worth distinguishing rather than reading either as
   proof of the other.
+- **`--dry-run=server` only previews the object you submit, not what it will
+  trigger.** Dry-running the same Deployment that got tolerations injected on
+  Day 03 showed nothing — correctly, since that injection happens on the Pod,
+  created later by the ReplicaSet controller as a separate API call.
+- **A local cluster's container runtime has its own TLS trust store,
+  independent of the host OS.** A corporate TLS-inspecting proxy (Zscaler)
+  broke every image pull inside `containerd` while the browser worked fine —
+  confirmed via `x509: certificate signed by unknown authority` in the Pod's
+  Events, fixed by disabling the proxy and forcing a retry with `kubectl
+  rollout restart`.
+- **`docker ps` hides stopped containers.** A kind node container stopped by
+  a host-level restart looked "missing," not stopped, until `docker ps -a`
+  showed its actual status — recovered with a plain `docker start`, no
+  cluster recreation needed.
 
 ---
 
@@ -565,11 +602,12 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Four entries exist so far, born from real Day 01-03 experiments rather than
+Six entries exist so far, born from real Day 01-04 experiments rather than
 written ahead of time — see the Troubleshooting Knowledge sections in
-[`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md)
+[`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md),
+[`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md),
 and
-[`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md).
+[`journal/daily/day-04-kubectl-core.md`](journal/daily/day-04-kubectl-core.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -594,6 +632,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-16 | [01](journal/daily/day-01-cluster-setup.md) | Cluster setup (LAB 01) | COMPLETED |
 | 2026-09-16 / 09-18 | [02](journal/daily/day-02-control-plane-and-nodes.md) | Control plane vs worker node | COMPLETED |
 | 2026-09-18 | [03](journal/daily/day-03-architecture-request-flow.md) | Architecture and the request flow | COMPLETED |
+| 2026-09-21 | [04](journal/daily/day-04-kubectl-core.md) | kubectl core verbs and output formats | COMPLETED |
 
 ---
 

@@ -39,7 +39,7 @@ two different physical machines, so hostname is the only reliable check.
 
 ### IT-SAGARS
 
-Last verified: 2026-09-18
+Last verified: 2026-09-21
 
 | Item | Value |
 |---|---|
@@ -54,7 +54,7 @@ Last verified: 2026-09-18
 | Disk free | 952 GiB |
 | `kubectl` | v1.37.0 |
 | `kind` | v0.33.0 |
-| `k8s-lab` cluster | created 2026-09-16 (Day 01), **re-verified 2026-09-18** via `check-dependencies.sh` — 3/3 nodes `Ready`, server v1.37.0, uptime spans both Day 01 and Day 02 work on this machine |
+| `k8s-lab` cluster | created 2026-09-16 (Day 01), **re-verified 2026-09-21** via `check-dependencies.sh` — 3/3 nodes `Ready`, server v1.37.0, uptime now spans Day 01 through the start of Day 04 on this machine |
 
 ### Nero
 

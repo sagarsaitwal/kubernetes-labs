@@ -2,7 +2,7 @@
 
 Author: Sagar Saitwal
 
-Covers: Day 00 – Day 03. Updated after each day of Module 01.
+Covers: Day 00 – Day 04. Updated after each day of Module 01.
 
 This is **quick reference only** — the reasoning, the mistakes, and the full
 command output live in `journal/daily/`. Come here to look something up fast;
@@ -70,6 +70,27 @@ go there to see how it was actually learned.
   needed.** Diff what you wrote against what `kubectl describe` shows was
   stored. A manifest with zero tolerations came back with two, injected by
   the `DefaultTolerationSeconds` admission plugin.
+- **`--dry-run=server` only previews admission on the object you actually
+  submit — not on anything a controller creates afterward.** A Deployment
+  dry-run shows nothing about the tolerations that get injected onto its
+  Pods later, because Pod creation is a separate API call made by the
+  ReplicaSet controller, not part of the Deployment request itself.
+- **`-o jsonpath` prints with no trailing newline, by design.** It looks
+  like empty output in a terminal unless you add `; echo` after it — it's
+  meant to be piped into scripts, not read directly.
+- **`docker ps` hides stopped containers.** A kind node container that
+  stopped (e.g. after a Docker/WSL restart) looks *absent* from plain
+  `docker ps`, not stopped — `docker ps -a` is required to tell the two
+  apart. Fix for a genuinely stopped node container is just `docker start
+  <name>`, no cluster recreation needed.
+- **A local cluster's container runtime has its own TLS trust store,
+  separate from the host OS.** Corporate TLS-inspecting proxies (Zscaler and
+  similar) that the browser/OS trust transparently can still break image
+  pulls inside `containerd` — surfaces as `x509: certificate signed by
+  unknown authority` in the Pod's Events, not a DNS or network error.
+- **`ErrImagePull` → `ImagePullBackOff` is a progression, not two separate
+  problems** — the first failed attempt, then the kubelet's retry/backoff
+  state for the same unresolved cause.
 - **The scheduler filters nodes by taint before it ever scores them.** A
   Pod with no matching toleration never becomes a candidate for a tainted
   node — kind's control-plane node carries `node-role.kubernetes.io/
@@ -104,6 +125,15 @@ go there to see how it was actually learned.
 | `kubectl apply -f <file>` | Declaratively create/update from a manifest | Default way to submit anything — idempotent, unlike `create` |
 | `kubectl get rs` | List ReplicaSets | Confirm a Deployment actually created one; hash ties Deployment→RS→Pod together |
 | `kubectl get pods -o wide -w` | Live Pod status + `NODE` column | Try to catch `Pending`/`ContainerCreating` — often still too slow, use `describe`'s Events as fallback |
+| `kubectl get <obj> -o yaml` | Full stored object | See everything admission/defaulting added beyond what you wrote |
+| `kubectl get <obj> -o jsonpath='{...}'` | Extract one exact field | Scripting, or checking one value without eyeballing YAML |
+| `kubectl apply -f <file> --dry-run=server -o yaml` | Preview admission on the submitted object, without persisting it | Check what a change would do — remembering it only covers the object itself, not its future children |
+| `kubectl get pods -o custom-columns='NAME:.metadata.name,...' --sort-by='...'` | Arbitrary table, sorted | When `-o wide` doesn't show the one field you need |
+| `kubectl logs <pod>` | Container's captured stdout/stderr | First troubleshooting step once a Pod is confirmed `Running` |
+| `kubectl exec -it <pod> -- <cmd>` | Run a live command inside the container | Inspect actual runtime state, not just logs |
+| `kubectl rollout restart deployment <name>` | Recreate a Deployment's Pods under a new ReplicaSet, unchanged manifest | Force a retry (e.g. a fresh image pull) without editing anything |
+| `docker ps -a --filter "name=<cluster>"` | All containers matching a name, including stopped | Tell "stopped" apart from "gone" — plain `docker ps` hides stopped ones |
+| `docker start <container>` | Resume a stopped container from its existing state | Recover a stopped kind node without recreating the cluster |
 
 ---
 
@@ -186,6 +216,19 @@ Did admission actually inject/mutate anything?
    -> diff what you wrote against `kubectl describe`/`-o yaml` of what got
       stored -- defaults and injected fields (e.g. tolerationSeconds) show
       up on their own, no special tooling needed.
+
+A cluster container "disappeared" from `docker ps`?
+   -> docker ps -a --filter "name=<cluster>"  -- stopped, not gone.
+   -> docker start <name> to recover -- no data lost, no recreation needed.
+
+Pods stuck in ErrImagePull / ImagePullBackOff?
+   -> kubectl describe pod <name> | grep -A5 Events -- read the EXACT text.
+   -> "x509: certificate signed by unknown authority" = TLS trust, likely a
+      corporate TLS-inspecting proxy (Zscaler) the container runtime's own
+      trust store was never given.
+   -> "no such host" = DNS. "connection refused" = network path.
+   -> all three look identical from the Pod's STATUS column alone -- the
+      Events text is what tells them apart.
 ```
 
 ---
@@ -227,3 +270,9 @@ Did admission actually inject/mutate anything?
     while CoreDNS could land there?
 18. What's the difference between a Pod's `Restart Count` and its `Age`, and
     what does each one actually tell you happened?
+19. Why can `--dry-run=server` against a Deployment show no injected
+    tolerations, even though the same cluster injects them on real Pods?
+20. Why might a local Kubernetes cluster fail every image pull on a
+    corporate machine whose browser works fine on the same network?
+21. What's the practical difference between `ErrImagePull` and
+    `ImagePullBackOff`?

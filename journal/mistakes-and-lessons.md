@@ -189,6 +189,73 @@ impression.
 
 ---
 
+## Mistake 003
+
+Date: 2026-09-21
+Module / Topic: 01 — Day 04, image pull failure on a corporate machine
+
+### What I did
+
+Reapplied `nginx-trace` (Day 03's Deployment) to the cluster on a different
+machine (`IT-SAGARS`), since clusters don't travel between devices.
+
+### What happened
+
+All 3 replicas stuck in `ErrImagePull`, then `ImagePullBackOff`. Assumed it
+was Zscaler (a corporate TLS-inspecting proxy running on this machine)
+without first checking the Pod's actual Events.
+
+### What I initially thought was wrong
+
+Suspected Zscaler correctly, but as a guess — hadn't yet looked at the exact
+error text to confirm it, versus it being DNS, a network path issue, or
+something else entirely.
+
+### Why it actually happened
+
+Confirmed via `kubectl describe pod ... | grep -A5 Events`:
+```text
+tls: failed to verify certificate: x509: certificate signed by unknown authority
+```
+Zscaler re-signs HTTPS traffic with its own certificate. Windows trusts it
+because IT installed the certificate into the OS trust store. `containerd`
+running inside the kind node container has its own, separate trust store,
+which was never given that certificate — so it correctly rejected the
+connection to `registry-1.docker.io` as untrusted.
+
+### Correct approach
+
+Read the exact `Events` text before naming a root cause, even when a guess
+turns out right — `x509: certificate signed by unknown authority`
+specifically means TLS/certificate trust, not DNS (`no such host`) or
+network path (`connection refused`), and those three look identical from
+the Pod's `STATUS` column alone.
+
+### Commands used to diagnose
+
+```bash
+kubectl describe pod nginx-trace-647575f7d8-9ggck | grep -A5 Events
+```
+
+### Verification
+
+Disabled Zscaler, then `kubectl rollout restart deployment nginx-trace` to
+force fresh Pods and fresh pull attempts. All 3 Pods on the new ReplicaSet
+reached `1/1 Running`.
+
+### Lesson
+
+A local Kubernetes cluster's container runtime has its own trust store,
+independent of the host OS. Corporate TLS-inspection tooling that the
+browser and OS handle transparently can still break image pulls inside
+`kind`/`minikube`/any container runtime that was never given the
+proxy's certificate — and the fix (disable the proxy, or import its CA into
+the runtime's trust store) is different from fixing a DNS or network
+problem, even though all three can present as the same `ErrImagePull`
+status.
+
+---
+
 ## Carried-over lessons from the Docker phase
 
 Not mistakes made in this repository, but hard-won conclusions that will change
