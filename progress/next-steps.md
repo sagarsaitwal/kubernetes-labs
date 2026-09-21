@@ -32,9 +32,12 @@ deliberately deferred items below.
 
 ### Day 05 — first concrete action
 
-**Not started, no teaching content prepared yet.** Namespaces, labels,
-selectors, annotations — fresh topic for next session, starting from
-scratch rather than resuming a half-run plan.
+**Queued, not started.** Teaching content was already given in the previous
+session (namespaces, labels/selectors as the actual mechanism connecting
+Services/Deployments to Pods, and why annotations are never selectable) —
+resume directly with the six-command list in `progress/current-progress.md`
+rather than re-deriving the plan. No lesson file written yet — same pattern
+as Days 02-04, built live and journaled afterward once actually run.
 
 ---
 

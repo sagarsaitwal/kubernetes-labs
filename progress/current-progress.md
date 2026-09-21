@@ -39,12 +39,65 @@ Module 01 — Kubernetes Fundamentals
 ## Current Topic
 
 Day 04 COMPLETED. Day 05 — Namespaces, labels, selectors, annotations —
-**not yet started.**
+**queued, not started.** Teaching content was given in the previous session
+(concepts below), but **no commands were run yet** — resume directly with
+the six-command list, don't re-derive the plan. Re-explain only if it's been
+long enough that a refresher is warranted.
 
 ## Current Subtopic
 
-Day 05 has not started. No teaching content prepared yet — this is a fresh
-topic for next session.
+### Concepts already taught, not yet exercised
+
+- **Namespaces** — partition one physical cluster into isolated virtual
+  clusters. Solves name collisions, gives a boundary for access control,
+  quotas, and environment separation (`dev`/`staging`/`prod` on one
+  cluster). Not everything is namespaced — Nodes, PersistentVolumes, and
+  namespaces themselves are cluster-scoped; Pods/Deployments/Services are
+  namespaced. Every command run so far implicitly targeted `default`.
+- **Labels** — key-value pairs on an object's metadata. Not just
+  organizational tags: this is the **actual mechanism** connecting objects
+  to each other. A Service finds its Pods by matching labels, not by name;
+  a Deployment finds its own Pods the same way, via `spec.selector`.
+- **Selectors** — the query language over labels. Equality-based
+  (`app=nginx-trace`) or set-based (`environment in (dev, staging)`). A
+  Service/Deployment's selector is a live, continuously-evaluated query, not
+  a one-time snapshot — add a matching label to any Pod and it's picked up
+  immediately, no code change.
+- **Annotations** — key-value pairs like labels, syntactically, but
+  **never used for selection**. Already seen one in the wild:
+  `kubectl.kubernetes.io/last-applied-configuration`, which `kubectl apply`
+  writes to itself to compute future diffs. Rule of thumb: if you'll ever
+  want to query a set of objects by it, it's a label; if it's just
+  descriptive metadata nobody will filter on, it's an annotation.
+
+### The six queued commands
+
+```bash
+# 1. Create a namespace — cluster-scoped object, new to the API server
+kubectl create namespace dev
+
+# 2. See it alongside the 4 that exist in every cluster by default
+kubectl get namespaces
+
+# 3. Filter by label instead of reading the whole list
+kubectl get pods -l app=nginx-trace
+
+# 4. Deploy the SAME manifest into the new namespace — proves isolation,
+#    since nothing about the object name collides with default's copy
+kubectl apply -f nginx-deployment.yaml -n dev
+
+# 5. Compare — two separate lists, same cluster
+kubectl get pods
+kubectl get pods -n dev
+
+# 6. Add an annotation, then try to SELECT by it — proves annotations are
+#    invisible to selectors, not just a naming convention
+kubectl annotate deployment nginx-trace learning-day=05 --overwrite
+kubectl get deployment nginx-trace -l learning-day=05
+```
+
+Expected result for #6's last line specifically: **empty** — that's the
+point of the exercise, not a failure.
 
 ## Learning Status
 
