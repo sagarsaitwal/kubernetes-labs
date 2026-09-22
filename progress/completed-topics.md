@@ -17,6 +17,7 @@ verification output was actually seen. Nothing is added optimistically.
 | 2026-09-18 | 03 | 01 | Architecture and the request flow — applied a real Deployment, traced steps 6-14 (+ partial 4) of the request-flow theory live | Self-directed trace exercise, no formal lab file | `kubectl get rs`/`get pods`/`describe pod` evidence for ReplicaSet creation, scheduling (`default-scheduler` named), image pull/create/start timing (10s total), and auto-injected tolerations proving admission ran; control-plane taint and CoreDNS's toleration for it both confirmed directly |
 | 2026-09-21 | 04 | 01 | kubectl core verbs and output formats — `-o yaml`, `-o jsonpath`, `--dry-run=server`, `-o custom-columns` + `--sort-by`, `logs`, `exec` | Self-directed exercise against `nginx-trace`, no formal lab file | All 6 commands run and interpreted against a live Deployment; found `--dry-run=server` only previews admission on the submitted object, not on objects a controller creates afterward; recovered a stopped node container; diagnosed and fixed a real `ErrImagePull` (Zscaler TLS interception) via `describe pod` Events |
 | 2026-09-22 | 05 | 01 | Namespaces, labels, selectors, annotations | Self-directed exercise (namespace creation, cross-namespace apply, label filter, annotation-vs-selector proof), no formal lab file | `dev` namespace created and isolated from `default` (same Deployment name, no collision); `kubectl get pods -l app=nginx-trace` confirmed selector matching; `kubectl get deployment -l learning-day=05` returned empty, proving annotations are excluded from selection |
+| 2026-09-22 | 06 | 01 | Pod anatomy, YAML, lifecycle, phases | First hand-written manifest (`manual-pod.yaml`), applied and deleted | `describe pod` showed Pod-level `Status:` vs. container-level `State:` distinctly; `kubectl get pods` after deletion confirmed no controller recreated the bare Pod |
 
 ### Findings recorded, fix deliberately deferred
 
@@ -29,7 +30,8 @@ verification output was actually seen. Nothing is added optimistically.
 | Item | Why it is not marked complete |
 |---|---|
 | Request-flow steps 1-3, 5 (auth, authz, etcd write) | No tooling yet to observe directly — deferred to Day 39-41, 45, 65/80 |
-| Day 06 — Pod anatomy, YAML, lifecycle, phases | Not yet started |
+| Day 07 — Multi-container Pods, sidecars, init containers | Not yet started |
+| `Pending`/`Failed`/`CrashLoopBackOff` phases observed directly | Day 06's Pod skipped `Pending` (cached image) — deliberately deferred to Day 08 |
 
 ---
 

@@ -7,7 +7,7 @@ Last updated: 2026-09-22
 > This file is the single source of truth for where the learning stopped.
 > On any new session or new device, read this file FIRST.
 
-**Current Day: 06**
+**Current Day: 07**
 
 > The line above is machine-readable. `scripts/utilities/check-dependencies.sh`
 > parses it to decide which dependencies this day actually requires. Keep the
@@ -38,105 +38,95 @@ Module 01 — Kubernetes Fundamentals
 
 ## Current Topic
 
-Day 05 COMPLETED. Day 06 — Pod anatomy, YAML, lifecycle, phases — **not yet
-started.** No teaching content prepared yet.
+Day 06 COMPLETED. Day 07 — Multi-container Pods, sidecars, init containers —
+**not yet started.** No teaching content prepared yet.
 
 ## Current Subtopic
 
-Day 06 has not started. This is the first day involving hand-written YAML
-(everything so far reused `fundamentals/labs/nginx-deployment.yaml`
-unmodified).
+Day 07 has not started.
 
 ## Learning Status
 
 🟡 IN PROGRESS
 
-Day 00 through Day 05 are all fully COMPLETED. Day 06 is next.
+Day 00 through Day 06 are all fully COMPLETED. Day 07 is next.
 
 ## Last Completed Lab
 
-**Day 05 — Namespaces, labels, selectors, annotations.** COMPLETED. Created
-a `dev` namespace; proved isolation by applying the same manifest into both
-`default` and `dev` with no collision; filtered Pods by label selector;
-proved annotations are structurally excluded from selection (`kubectl get
-deployment -l learning-day=05` found nothing, even though the annotation
-was genuinely present). Corrected two of my own planning errors live: `kind`
-ships a 5th default namespace (`local-path-storage`), and `kubectl get`
-rejects combining an object name with a selector.
+**Day 06 — Pod anatomy, YAML, lifecycle, phases.** COMPLETED. Wrote the
+course's first hand-authored manifest (`fundamentals/labs/manual-pod.yaml`),
+correct on the first attempt. Applied it, observed the Pod-level `Status:`
+vs. container-level `State:` distinction directly via `describe`, then
+deleted it and confirmed via `kubectl get pods` that nothing recreated it —
+proving a bare Pod has no controller, unlike every `nginx-trace` Pod used
+since Day 03. Also found the same Day 03 toleration-injection applies to
+any Pod, not just controller-created ones.
 
 ## Last Commands Practiced
 
 ```bash
-kubectl create namespace dev
-kubectl get namespaces
-kubectl get pods -l app=nginx-trace
-kubectl apply -f nginx-deployment.yaml -n dev
+kubectl apply -f manual-pod.yaml
+kubectl get pod manual-pod
+kubectl get pod manual-pod -w
+kubectl describe pod manual-pod
+kubectl delete pod manual-pod
 kubectl get pods
-kubectl get pods -n dev
-kubectl annotate deployment nginx-trace learning-day=05 --overwrite
-kubectl get deployment -l learning-day=05
 ```
 
 ## Last YAML Practiced
 
-`fundamentals/labs/nginx-deployment.yaml` — same file, reused a third time
-(applied into a second namespace, not edited). First hand-written YAML is
-still Day 06.
+`fundamentals/labs/manual-pod.yaml` — first hand-written manifest of the
+course. Minimal Pod: `apiVersion: v1`, `kind: Pod`, one container
+(`nginx:1.27-alpine`).
 
 ## What I Learned
 
-- Namespaces partition one cluster into isolated virtual clusters — object
-  names only need to be unique *within* a namespace, proven by running the
-  identical Deployment name in both `default` and `dev` with zero conflict.
-- Labels are the actual mechanism Services/Deployments use to find their
-  Pods, not just organizational tags — `kubectl get pods -l app=...` runs
-  the same equality-match by hand.
-- Annotations are structurally excluded from selection — not a convention,
-  a hard API boundary, proven directly rather than asserted.
-- `kind` ships a 5th default namespace (`local-path-storage`) beyond the 4
-  a bare cluster has, for its bundled dynamic-storage provisioner.
-- `kubectl get <type> <name>` and `kubectl get <type> -l <selector>` are
-  mutually exclusive — combining them is rejected outright, not a warning.
-- A ReplicaSet's name hash is computed purely from its Pod template's
-  content — identical templates produce identical hashes regardless of
-  namespace or timing.
+- A Pod's minimum valid manifest needs exactly 6 fields: `apiVersion`,
+  `kind`, `metadata.name`, and per container `name` + `image`.
+- A Deployment's `spec.template` is literally a Pod spec, nested — writing
+  a standalone Pod first makes that shape recognizable rather than new
+  syntax.
+- Pod-level `status.phase` and container-level `state` are different
+  signals — phase is coarse, container state carries the actual
+  reason/exit code.
+- A bare Pod has no controller — deleting one is final, unlike a
+  Deployment-managed Pod, which gets replaced within seconds.
+- Admission's toleration injection (Day 03) applies to any Pod creation,
+  not just ones created via a ReplicaSet.
+- A cached image can make the `Pending` phase nearly invisible — it
+  reflects real waiting, not a mandatory visible step.
+- A `kubectl get -w` watch reflects changes from *any* terminal acting on
+  the same object, not just its own session — explains an apparent
+  "unexplained" transition that turned out to be a `delete` run
+  concurrently in a second terminal.
 
 ## What I Broke
 
-Nothing. Two planning errors were mine (assistant), not Sagar's — see
-`journal/daily/day-05-namespaces-labels-selectors.md`, "What Failed."
-Neither affected cluster state; both were corrected live.
+Nothing. One filename typo (`manua-pod.yaml`) caught and fixed before it
+caused any downstream issue.
 
 ## Errors Encountered
 
-```text
-error: name cannot be provided when a selector is specified
-```
-(from an invalid command the assistant gave — corrected within the session,
-not a Sagar misunderstanding, so not filed as a formal Mistake.)
+None.
 
 ## Root Cause
 
-`kubectl get` treats "one named object" and "a set matching a selector" as
-mutually exclusive query modes.
+N/A
 
 ## How It Was Fixed
 
-Dropped the object name, kept the selector:
-`kubectl get deployment -l learning-day=05`.
+N/A
 
 ## Mistakes Made
 
-None — no `journal/mistakes-and-lessons.md` entry for Day 05. Both
-corrections this session were the assistant's planning errors, not gaps in
-Sagar's understanding.
+None — no `journal/mistakes-and-lessons.md` entry for Day 06.
 
 ## Important Lessons
 
-- Check `kubectl get namespaces` on a real cluster rather than assuming the
-  textbook-minimal default set — `kind` specifically ships an extra one.
-- `kubectl get`'s name and selector arguments cannot be combined — worth
-  remembering before scripting anything that filters a known object further.
+- A live watch (`-w`) isn't scoped to "this terminal's own actions" — it
+  reflects the object's real state regardless of which session changed it.
+- Reviewing a hand-written manifest before applying catches small errors
+  (like a filename typo) before they propagate into later commands.
 
 ## Unresolved Issues
 
@@ -146,27 +136,28 @@ None blocking. Carried forward:
 2. Why only some static Pods got a fresh `Age` after a node reboot —
    deferred to Day 68.
 3. CoreDNS anti-affinity fix — deliberately deferred to Day 34/36.
-4. **New:** all 3 `nginx-trace` Pods in `default` showed a simultaneous
-   restart, `RESTARTS: 1 (162m ago)`, noticed during Day 05's label-filter
-   command but not investigated — no `describe`/Events check done yet. Not
-   blocking; chase if it recurs or affects a future day's work.
+4. All 3 `nginx-trace` Pods showed a simultaneous restart on Day 05
+   (`162m ago`), not investigated — chase if it recurs.
+5. **New:** `Pending`/`Failed`/`CrashLoopBackOff` phases not yet observed
+   directly (today's Pod skipped `Pending` due to a cached image) —
+   deliberately deferred to Day 08, a dedicated break/fix day.
 
 ## Next Topic
 
-Day 06 — Pod anatomy, YAML, lifecycle, phases.
+Day 07 — Multi-container Pods, sidecars, init containers.
 
 ## Next Lab
 
-LAB 06 — not yet written. File to create:
-`journal/daily/day-06-pod-basics.md`.
+LAB 07 — not yet written. File to create:
+`journal/daily/day-07-multi-container-pods.md`.
 
 ## Overall Progress
 
-Day 05 of 130 COMPLETE. Day 06 starting next session. 0 of 30 modules
+Day 06 of 130 COMPLETE. Day 07 starting next session. 0 of 30 modules
 completed, 1 in progress. 0 of 10 projects.
 
 ```text
-[■■                            ] 4%
+[■■                            ] 5%
 ```
 
 Full day-by-day plan: `progress/daily-plan.md`

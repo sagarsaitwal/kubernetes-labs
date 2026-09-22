@@ -72,8 +72,8 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 
 ## Progress
 
-**Day 05 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS.** A 3-node
-`kind` cluster is running Kubernetes v1.37.0, verified healthy.
+**Day 06 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
+cluster is running Kubernetes v1.37.0, verified healthy.
 
 | Day | Topic | Status | Evidence |
 |:--:|---|---|---|
@@ -83,7 +83,8 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 | 03 | Architecture and the request flow, traced live | **Complete** | [journal](journal/daily/day-03-architecture-request-flow.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 04 | kubectl output formats, `--dry-run=server` scope, image-pull troubleshooting | **Complete** | [journal](journal/daily/day-04-kubectl-core.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 05 | Namespaces, labels, selectors, annotations | **Complete** | [journal](journal/daily/day-05-namespaces-labels-selectors.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
-| 06 | Pod anatomy, YAML, lifecycle, phases | Not started | [lab (queued)](progress/next-steps.md) |
+| 06 | Pod anatomy, YAML, lifecycle, phases — first hand-written manifest | **Complete** | [journal](journal/daily/day-06-pod-basics.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
+| 07 | Multi-container Pods, sidecars, init containers | Not started | [lab (queued)](progress/next-steps.md) |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
 Where work stopped: [`progress/current-progress.md`](progress/current-progress.md)
@@ -95,18 +96,17 @@ bottom of this file.
 
 ### Next topic
 
-Day 06 — Pod anatomy, YAML, lifecycle, phases. First hand-written YAML of
-the course.
+Day 07 — Multi-container Pods, sidecars, init containers.
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
 
 | Module | Topic | Status |
 |:--:|---|---|
-| 01 | Kubernetes Fundamentals | IN PROGRESS |
-| 02 | Architecture | NOT STARTED |
-| 03 | kubectl | NOT STARTED |
-| 04 | Pods | NOT STARTED |
+| 01 | Kubernetes Fundamentals | COMPLETED |
+| 02 | Architecture | COMPLETED |
+| 03 | kubectl | COMPLETED |
+| 04 | Pods | IN PROGRESS |
 | 05 | ReplicaSets | NOT STARTED |
 | 06 | Deployments | NOT STARTED |
 | 07 | Services | NOT STARTED |
@@ -295,6 +295,27 @@ query found it; the annotation query — same syntax, same object, the value
 genuinely present — found nothing. Proves the API enforces the boundary
 rather than it being a naming habit.
 
+**A bare Pod has no controller — delete it, and it's gone for good.**
+
+```mermaid
+flowchart LR
+    subgraph Bare["Bare Pod (manual-pod)"]
+        direction LR
+        B1["kubectl delete pod"] --> B2["gone — nothing recreates it"]
+    end
+    subgraph Managed["Deployment-managed Pod (nginx-trace)"]
+        direction LR
+        M1["kubectl delete pod"] --> M2["ReplicaSet controller notices"] --> M3["new Pod created, seconds later"]
+    end
+```
+
+Day 06: wrote and applied `manual-pod.yaml` by hand, then deleted it.
+`kubectl get pods` afterward showed only the pre-existing `nginx-trace`
+Pods — no replacement appeared. This is the direct, provable reason
+Deployments exist: every `nginx-trace` Pod deleted since Day 01 has always
+come back because a ReplicaSet was watching it; this one didn't, because
+nothing was.
+
 ---
 
 ## What I can explain, not just run
@@ -392,6 +413,18 @@ a day and a command behind it. Nothing here is written ahead of being verified.
   the `dev` namespace as had appeared on Day 03's very first one in
   `default` — same template text, same hash, regardless of namespace or
   timing.
+- **The minimum valid Pod manifest, and why Deployment YAML isn't new
+  syntax.** Wrote one by hand with exactly 6 required fields; a
+  Deployment's `spec.template` turned out to be that identical shape,
+  nested one level deeper under a controller.
+- **A bare Pod has no controller — proven by deletion, not assumed.**
+  Deleted a hand-written Pod directly; nothing replaced it, unlike every
+  `nginx-trace` Pod deleted since Day 01, which a ReplicaSet has always
+  replaced within seconds.
+- **Pod-level `status.phase` and container-level `state` answer different
+  questions.** `describe`'s `Status:` line (Pod) and its `Containers: ...
+  State:` block (container) can diverge in what they explain — the phase
+  alone doesn't carry a reason.
 
 ---
 
@@ -632,13 +665,14 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Seven entries exist so far, born from real Day 01-05 experiments rather than
+Eight entries exist so far, born from real Day 01-06 experiments rather than
 written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md),
 [`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md),
 [`journal/daily/day-04-kubectl-core.md`](journal/daily/day-04-kubectl-core.md),
+[`journal/daily/day-05-namespaces-labels-selectors.md`](journal/daily/day-05-namespaces-labels-selectors.md),
 and
-[`journal/daily/day-05-namespaces-labels-selectors.md`](journal/daily/day-05-namespaces-labels-selectors.md).
+[`journal/daily/day-06-pod-basics.md`](journal/daily/day-06-pod-basics.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -665,6 +699,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-18 | [03](journal/daily/day-03-architecture-request-flow.md) | Architecture and the request flow | COMPLETED |
 | 2026-09-21 | [04](journal/daily/day-04-kubectl-core.md) | kubectl core verbs and output formats | COMPLETED |
 | 2026-09-22 | [05](journal/daily/day-05-namespaces-labels-selectors.md) | Namespaces, labels, selectors, annotations | COMPLETED |
+| 2026-09-22 | [06](journal/daily/day-06-pod-basics.md) | Pod anatomy, YAML, lifecycle, phases | COMPLETED |
 
 ---
 
