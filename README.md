@@ -72,7 +72,7 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 
 ## Progress
 
-**Day 06 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
+**Day 07 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
 cluster is running Kubernetes v1.37.0, verified healthy.
 
 | Day | Topic | Status | Evidence |
@@ -84,7 +84,8 @@ cluster is running Kubernetes v1.37.0, verified healthy.
 | 04 | kubectl output formats, `--dry-run=server` scope, image-pull troubleshooting | **Complete** | [journal](journal/daily/day-04-kubectl-core.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 05 | Namespaces, labels, selectors, annotations | **Complete** | [journal](journal/daily/day-05-namespaces-labels-selectors.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 06 | Pod anatomy, YAML, lifecycle, phases — first hand-written manifest | **Complete** | [journal](journal/daily/day-06-pod-basics.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
-| 07 | Multi-container Pods, sidecars, init containers | Not started | [lab (queued)](progress/next-steps.md) |
+| 07 | Multi-container Pods, sidecars, init containers | **Complete** | [journal](journal/daily/day-07-multi-container-pods.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
+| 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | Not started | [lab (queued)](progress/next-steps.md) |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
 Where work stopped: [`progress/current-progress.md`](progress/current-progress.md)
@@ -96,7 +97,8 @@ bottom of this file.
 
 ### Next topic
 
-Day 07 — Multi-container Pods, sidecars, init containers.
+Day 08 — Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff`
+(dedicated break/fix day).
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
@@ -316,6 +318,23 @@ Deployments exist: every `nginx-trace` Pod deleted since Day 01 has always
 come back because a ReplicaSet was watching it; this one didn't, because
 nothing was.
 
+**A native sidecar (`restartPolicy: Always`) still waits its turn — the
+flag changes what happens after it starts, not when.**
+
+```mermaid
+flowchart LR
+    S["setup<br/>(classic init)"] -->|"must exit 0 first"| L["log-sidecar<br/>(restartPolicy: Always)"]
+    L -->|"starts, then persists"| N["nginx<br/>(main container)"]
+    S -.->|"stuck (Zscaler)"| BLOCKED["log-sidecar AND nginx<br/>both stuck too —<br/>own images irrelevant"]
+```
+
+Day 07: while `setup` was stuck in `ImagePullBackOff` (Zscaler again — see
+Mistake 003), `log-sidecar` sat in `Waiting: PodInitializing` despite its
+own image having nothing wrong with it. Proof, not assumption: a native
+sidecar's "always running" behavior only applies once it's had its turn —
+`restartPolicy: Always` doesn't let it skip ahead of an earlier,
+still-failing `initContainers` entry.
+
 ---
 
 ## What I can explain, not just run
@@ -425,6 +444,19 @@ a day and a command behind it. Nothing here is written ahead of being verified.
   questions.** `describe`'s `Status:` line (Pod) and its `Containers: ...
   State:` block (container) can diverge in what they explain — the phase
   alone doesn't carry a reason.
+- **Init containers run sequentially and gate everything after them —
+  sidecars included.** A native sidecar (`restartPolicy: Always`) still
+  waits behind every earlier `initContainers` entry; proven when a stuck
+  Zscaler pull on one init container blocked a sidecar whose own image was
+  perfectly fine.
+- **A container's shared-volume handoff is provable, not just plausible.**
+  `kubectl exec -c nginx -- cat .../index.html` returned exactly the text
+  a separate init container had written — direct evidence the ordering and
+  the volume mount both worked, not an assumption from reading the YAML.
+- **Recognizing a previously-documented error turns a second incident into
+  a fast fix.** The exact `x509: certificate signed by unknown authority`
+  text from Mistake 003 recurred on a different image (`busybox` instead
+  of `nginx`) — recognized immediately from the error string alone.
 
 ---
 
@@ -665,14 +697,15 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Eight entries exist so far, born from real Day 01-06 experiments rather than
+Nine entries exist so far, born from real Day 01-07 experiments rather than
 written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md),
 [`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md),
 [`journal/daily/day-04-kubectl-core.md`](journal/daily/day-04-kubectl-core.md),
 [`journal/daily/day-05-namespaces-labels-selectors.md`](journal/daily/day-05-namespaces-labels-selectors.md),
+[`journal/daily/day-06-pod-basics.md`](journal/daily/day-06-pod-basics.md),
 and
-[`journal/daily/day-06-pod-basics.md`](journal/daily/day-06-pod-basics.md).
+[`journal/daily/day-07-multi-container-pods.md`](journal/daily/day-07-multi-container-pods.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -700,6 +733,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-21 | [04](journal/daily/day-04-kubectl-core.md) | kubectl core verbs and output formats | COMPLETED |
 | 2026-09-22 | [05](journal/daily/day-05-namespaces-labels-selectors.md) | Namespaces, labels, selectors, annotations | COMPLETED |
 | 2026-09-22 | [06](journal/daily/day-06-pod-basics.md) | Pod anatomy, YAML, lifecycle, phases | COMPLETED |
+| 2026-09-22 | [07](journal/daily/day-07-multi-container-pods.md) | Multi-container Pods, sidecars, init containers | COMPLETED |
 
 ---
 

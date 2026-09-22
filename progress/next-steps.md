@@ -26,14 +26,16 @@ cd /mnt/d/Kubernetes/fundamentals/labs
 kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
-**Day 06 is now fully COMPLETE** — see
-`journal/daily/day-06-pod-basics.md`. Nothing carries over except the
-deliberately deferred items below.
+**Day 07 is now fully COMPLETE** — see
+`journal/daily/day-07-multi-container-pods.md`. Nothing carries over except
+the deliberately deferred items below.
 
-### Day 07 — first concrete action
+### Day 08 — first concrete action
 
-**Not started, no teaching content prepared yet.** Multi-container Pods,
-sidecars, init containers.
+**Not started, no teaching content prepared yet.** Pod failures: `Pending`,
+`CrashLoopBackOff`, `ImagePullBackOff` — a dedicated break/fix day, and
+where the `Pending`/`Failed` phases deferred since Day 06 finally get
+direct, deliberate treatment.
 
 ---
 
@@ -49,7 +51,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 | 04 | kubectl core verbs and output formats — COMPLETE (6 commands run + interpreted; dry-run scope finding; stopped-node recovery; Zscaler ErrImagePull diagnosed and fixed) | `day-04-kubectl-core.md` | — |
 | 05 | Namespaces, labels, selectors, annotations — COMPLETE (namespace isolation proven; label selector matching proven; annotation-vs-selector boundary proven) | `day-05-namespaces-labels-selectors.md` | — |
 | 06 | Pod anatomy, YAML, lifecycle, phases — COMPLETE (first hand-written manifest; Status vs State distinguished; no-controller finding proven by deletion) | `day-06-pod-basics.md` | — |
-| 07 | Multi-container Pods, sidecars, init containers | `day-07-multi-container-pods.md` | — |
+| 07 | Multi-container Pods, sidecars, init containers — COMPLETE (init/sidecar ordering proven; shared-volume handoff proven; Zscaler recurrence fixed fast) | `day-07-multi-container-pods.md` | — |
+| 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | `day-08-pod-troubleshooting.md` | — |
 
 ---
 
@@ -81,7 +84,7 @@ scheduled day arrives.
 | Why only some static Pods (`etcd`, `kube-apiserver`) got a fresh `Age` after a node reboot, while others apparently didn't | Day 03, `Nero` | Day 68 (kubelet/CRI internals) |
 | On a corporate machine, TLS-inspecting proxies (Zscaler) break image pulls inside any local cluster unless disabled or their CA is imported into the runtime's trust store — no permanent fix applied, disabling the proxy per session is the current workaround | Day 04, `IT-SAGARS` | Not currently scheduled — revisit if it recurs often enough to justify a permanent fix |
 | All 3 `nginx-trace` Pods in `default` showed a simultaneous restart (`RESTARTS: 1 (162m ago)`), noticed but not investigated | Day 05, `IT-SAGARS` | Not currently scheduled — check `describe`/Events if it recurs |
-| `Pending`/`Failed`/`CrashLoopBackOff` phases not yet observed directly — Day 06's Pod skipped `Pending` because its image was already cached | Day 06, `IT-SAGARS` | Day 08 (dedicated break/fix day) |
+| `Pending`/`Failed`/`CrashLoopBackOff` phases not yet observed directly — Day 06's Pod skipped `Pending` because its image was already cached | Day 06, `IT-SAGARS` | Day 08 (dedicated break/fix day) — starting next session |
 
 ---
 

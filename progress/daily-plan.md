@@ -28,8 +28,8 @@ break/fix cycle, one journal entry. At a steady 5 days per week this is about
 | | |
 |---|---|
 | Total planned days | 131 (Day 00 - Day 130) |
-| Completed | 7 (Day 00, Day 01, Day 02, Day 03, Day 04, Day 05, Day 06) |
-| In progress | 1 (Day 07 — not yet started) |
+| Completed | 8 (Day 00 - Day 07) |
+| In progress | 1 (Day 08 — not yet started) |
 | Projects | 10 |
 | Certifications targeted | CKA, CKAD, CKS |
 
@@ -58,7 +58,7 @@ Module 04-06. Goal: understand what actually runs, and what keeps it running.
 | Day | Topic | File | Lab | Status |
 |:--:|---|---|---|---|
 | 06 | Pod anatomy, YAML, lifecycle, phases | `day-06-pod-basics.md` | LAB 06 | COMPLETED |
-| 07 | Multi-container Pods, sidecars, init containers | `day-07-multi-container-pods.md` | LAB 07 | NOT STARTED |
+| 07 | Multi-container Pods, sidecars, init containers | `day-07-multi-container-pods.md` | LAB 07 | COMPLETED |
 | 08 | Pod failures: Pending, CrashLoopBackOff, ImagePullBackOff | `day-08-pod-troubleshooting.md` | LAB 08 (break/fix) | NOT STARTED |
 | 09 | ReplicaSets and why you rarely write one | `day-09-replicasets.md` | LAB 09 | NOT STARTED |
 | 10 | Deployments and rolling updates | `day-10-deployments.md` | LAB 10 | NOT STARTED |
@@ -461,3 +461,4 @@ Changes to this plan get recorded here rather than silently applied.
 | 2026-09-21 | Day 04 completed (on `IT-SAGARS`) | Ran and interpreted `-o yaml`, `-o jsonpath`, `--dry-run=server`, `-o custom-columns` + `--sort-by`, `logs`, `exec` against a live Deployment. New finding: `--dry-run=server` only previews admission on the submitted object, not on objects a controller creates afterward (Day 03's toleration injection happens on the Pod, a separate API call). Also recovered a stopped `k8s-lab-control-plane` container found at session start, and diagnosed + fixed a real `ErrImagePull` caused by a corporate TLS-inspecting proxy (Zscaler) — confirmed via the exact `x509` error in the Pod's Events, recorded as Mistake 003 |
 | 2026-09-22 | Day 05 completed (on `IT-SAGARS`) | Created a `dev` namespace and proved isolation by applying the same manifest into both `default` and `dev` with no collision. Confirmed label selectors as the real Service/Deployment matching mechanism (`kubectl get pods -l app=...`), and proved annotations are structurally excluded from selection (`kubectl get deployment -l learning-day=05` returned empty despite the annotation being present). Two assistant planning errors corrected live (`kind`'s extra `local-path-storage` namespace; `kubectl get` rejecting a name + selector together) — not filed as Mistakes, since neither was a Sagar misunderstanding |
 | 2026-09-22 | Day 06 completed (on `IT-SAGARS`) | Wrote the course's first hand-authored manifest (`manual-pod.yaml`), correct on the first attempt. Applied it, distinguished Pod-level `Status:` from container-level `State:` via `describe`, then deleted it and confirmed via `kubectl get pods` that no controller recreated it. Found admission's toleration injection (Day 03) applies to any Pod, not just controller-created ones. `Pending`/`Failed` phases not observed today (cached image) — deliberately deferred to Day 08 |
+| 2026-09-22 | Day 07 completed (on `IT-SAGARS`) | Wrote a 3-container Pod by hand (`multi-container-demo.yaml`) — 1 classic init container, 1 native sidecar (`restartPolicy: Always`), 1 main container — correct on the first attempt. Confirmed sequential init ordering and completion-gating, a native sidecar still waiting its turn despite `restartPolicy: Always`, and the shared-volume handoff with real file content. Hit a recurring Zscaler `ImagePullBackOff` (same signature as Mistake 003), recognized and fixed fast rather than requiring fresh diagnosis |

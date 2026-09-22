@@ -7,7 +7,7 @@ Last updated: 2026-09-22
 > This file is the single source of truth for where the learning stopped.
 > On any new session or new device, read this file FIRST.
 
-**Current Day: 07**
+**Current Day: 08**
 
 > The line above is machine-readable. `scripts/utilities/check-dependencies.sh`
 > parses it to decide which dependencies this day actually requires. Keep the
@@ -34,99 +34,108 @@ kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 
 ## Current Module
 
-Module 01 — Kubernetes Fundamentals
+Module 02 — Workloads
 
 ## Current Topic
 
-Day 06 COMPLETED. Day 07 — Multi-container Pods, sidecars, init containers —
-**not yet started.** No teaching content prepared yet.
+Day 07 COMPLETED. Day 08 — Pod failures: `Pending`, `CrashLoopBackOff`,
+`ImagePullBackOff` (a dedicated break/fix day) — **not yet started.** No
+teaching content prepared yet.
 
 ## Current Subtopic
 
-Day 07 has not started.
+Day 08 has not started. This is also where the `Pending`/`Failed` phases
+deliberately deferred from Day 06 get their direct treatment.
 
 ## Learning Status
 
 🟡 IN PROGRESS
 
-Day 00 through Day 06 are all fully COMPLETED. Day 07 is next.
+Day 00 through Day 07 are all fully COMPLETED. Day 08 is next.
 
 ## Last Completed Lab
 
-**Day 06 — Pod anatomy, YAML, lifecycle, phases.** COMPLETED. Wrote the
-course's first hand-authored manifest (`fundamentals/labs/manual-pod.yaml`),
-correct on the first attempt. Applied it, observed the Pod-level `Status:`
-vs. container-level `State:` distinction directly via `describe`, then
-deleted it and confirmed via `kubectl get pods` that nothing recreated it —
-proving a bare Pod has no controller, unlike every `nginx-trace` Pod used
-since Day 03. Also found the same Day 03 toleration-injection applies to
-any Pod, not just controller-created ones.
+**Day 07 — Multi-container Pods, sidecars, init containers.** COMPLETED.
+Wrote a 3-container Pod by hand (`fundamentals/labs/multi-container-demo.yaml`)
+— one classic init container, one native sidecar (`restartPolicy: Always`),
+one main container — correct on the first attempt. Hit a recurring Zscaler
+`ImagePullBackOff` on the first apply (same `x509` signature as Day 04's
+Mistake 003, recognized and fixed fast). Confirmed, with real command
+output: init-then-sidecar-then-main ordering; a native sidecar still waits
+its turn in the init sequence despite `restartPolicy: Always`; the
+shared-volume handoff (main container served the exact file the init
+container wrote); sidecar persistence (`logs -c` showed it still running,
+5s apart, minutes later); and why an init container that redirects its
+output to a file correctly shows empty `kubectl logs`.
 
 ## Last Commands Practiced
 
 ```bash
-kubectl apply -f manual-pod.yaml
-kubectl get pod manual-pod
-kubectl get pod manual-pod -w
-kubectl describe pod manual-pod
-kubectl delete pod manual-pod
-kubectl get pods
+kubectl apply -f multi-container-demo.yaml
+kubectl get pod multi-container-demo -w
+kubectl describe pod multi-container-demo
+kubectl exec multi-container-demo -c nginx -- cat /usr/share/nginx/html/index.html
+kubectl logs multi-container-demo -c log-sidecar
+kubectl logs multi-container-demo -c setup
+kubectl delete pod multi-container-demo
 ```
 
 ## Last YAML Practiced
 
-`fundamentals/labs/manual-pod.yaml` — first hand-written manifest of the
-course. Minimal Pod: `apiVersion: v1`, `kind: Pod`, one container
-(`nginx:1.27-alpine`).
+`fundamentals/labs/multi-container-demo.yaml` — second hand-written
+manifest of the course. 2 init containers (one classic, one native
+sidecar) + 1 main container, sharing an `emptyDir` volume.
 
 ## What I Learned
 
-- A Pod's minimum valid manifest needs exactly 6 fields: `apiVersion`,
-  `kind`, `metadata.name`, and per container `name` + `image`.
-- A Deployment's `spec.template` is literally a Pod spec, nested — writing
-  a standalone Pod first makes that shape recognizable rather than new
-  syntax.
-- Pod-level `status.phase` and container-level `state` are different
-  signals — phase is coarse, container state carries the actual
-  reason/exit code.
-- A bare Pod has no controller — deleting one is final, unlike a
-  Deployment-managed Pod, which gets replaced within seconds.
-- Admission's toleration injection (Day 03) applies to any Pod creation,
-  not just ones created via a ReplicaSet.
-- A cached image can make the `Pending` phase nearly invisible — it
-  reflects real waiting, not a mandatory visible step.
-- A `kubectl get -w` watch reflects changes from *any* terminal acting on
-  the same object, not just its own session — explains an apparent
-  "unexplained" transition that turned out to be a `delete` run
-  concurrently in a second terminal.
+- A second container belongs in the same Pod only for tight coupling
+  (shared network/volumes/lifecycle) — an independent service is a
+  separate Pod/Deployment.
+- Init containers run sequentially; each must exit `0` before the next
+  starts — confirmed via `Terminated`/`Completed`/exit `0` in `describe`.
+- A native sidecar is an `initContainers` entry with `restartPolicy:
+  Always` — it doesn't block on completion, stays alive, restarts on
+  crash, and counts toward `READY`.
+- A native sidecar still respects its position in the `initContainers`
+  list — proven by accident when a stuck earlier entry (Zscaler) also
+  blocked the sidecar, despite the sidecar's own image being fine.
+- `kubectl logs`/`exec` need `-c <container>` once a Pod has more than one
+  container.
+- A container that redirects its output to a file (`echo ... > file`)
+  correctly produces empty `kubectl logs` — not a sign anything failed.
 
 ## What I Broke
 
-Nothing. One filename typo (`manua-pod.yaml`) caught and fixed before it
-caused any downstream issue.
+Nothing broken by the manifest. The first `apply` hit `ImagePullBackOff` on
+`setup`, caused by Zscaler (recurrence of Day 04's Mistake 003), not by
+anything in the YAML.
 
 ## Errors Encountered
 
-None.
+```text
+Failed to pull image "busybox:1.36": ... tls: failed to verify certificate: x509: certificate signed by unknown authority
+```
 
 ## Root Cause
 
-N/A
+Zscaler TLS interception — same mechanism as Mistake 003.
 
 ## How It Was Fixed
 
-N/A
+Disabled Zscaler; deleted and reapplied the Pod fresh.
 
 ## Mistakes Made
 
-None — no `journal/mistakes-and-lessons.md` entry for Day 06.
+None new — this was a **recurrence** of the already-documented Mistake 003
+(Zscaler/x509), not a new failure mode. Recognized and fixed faster than
+Day 04 specifically because it had already been diagnosed once.
 
 ## Important Lessons
 
-- A live watch (`-w`) isn't scoped to "this terminal's own actions" — it
-  reflects the object's real state regardless of which session changed it.
-- Reviewing a hand-written manifest before applying catches small errors
-  (like a filename typo) before they propagate into later commands.
+- A previously-documented root cause (the exact `x509` error text) turns a
+  second occurrence into a fast fix instead of a fresh investigation.
+- When a multi-container Pod looks stuck, start reading `Init Containers`
+  from the top — the real problem is rarely the last entry.
 
 ## Unresolved Issues
 
@@ -138,22 +147,22 @@ None blocking. Carried forward:
 3. CoreDNS anti-affinity fix — deliberately deferred to Day 34/36.
 4. All 3 `nginx-trace` Pods showed a simultaneous restart on Day 05
    (`162m ago`), not investigated — chase if it recurs.
-5. **New:** `Pending`/`Failed`/`CrashLoopBackOff` phases not yet observed
-   directly (today's Pod skipped `Pending` due to a cached image) —
-   deliberately deferred to Day 08, a dedicated break/fix day.
+5. `Pending`/`Failed`/`CrashLoopBackOff` phases not yet observed directly —
+   deliberately deferred to **Day 08, starting next session.**
 
 ## Next Topic
 
-Day 07 — Multi-container Pods, sidecars, init containers.
+Day 08 — Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff`
+(dedicated break/fix day).
 
 ## Next Lab
 
-LAB 07 — not yet written. File to create:
-`journal/daily/day-07-multi-container-pods.md`.
+LAB 08 — not yet written. File to create:
+`journal/daily/day-08-pod-troubleshooting.md`.
 
 ## Overall Progress
 
-Day 06 of 130 COMPLETE. Day 07 starting next session. 0 of 30 modules
+Day 07 of 130 COMPLETE. Day 08 starting next session. 0 of 30 modules
 completed, 1 in progress. 0 of 10 projects.
 
 ```text
