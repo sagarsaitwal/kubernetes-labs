@@ -26,18 +26,15 @@ cd /mnt/d/Kubernetes/fundamentals/labs
 kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
-**Day 04 is now fully COMPLETE** — see
-`journal/daily/day-04-kubectl-core.md`. Nothing carries over except the
-deliberately deferred items below.
+**Day 05 is now fully COMPLETE** — see
+`journal/daily/day-05-namespaces-labels-selectors.md`. Nothing carries over
+except the deliberately deferred items below.
 
-### Day 05 — first concrete action
+### Day 06 — first concrete action
 
-**Queued, not started.** Teaching content was already given in the previous
-session (namespaces, labels/selectors as the actual mechanism connecting
-Services/Deployments to Pods, and why annotations are never selectable) —
-resume directly with the six-command list in `progress/current-progress.md`
-rather than re-deriving the plan. No lesson file written yet — same pattern
-as Days 02-04, built live and journaled afterward once actually run.
+**Not started, no teaching content prepared yet.** Pod anatomy, YAML,
+lifecycle, phases — the first day involving hand-written YAML (every prior
+day reused `fundamentals/labs/nginx-deployment.yaml` unmodified).
 
 ---
 
@@ -51,8 +48,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 | 02 | Control plane vs worker node — COMPLETE (heartbeat/taint mechanism, static manifests, stateless/stateful test, CoreDNS placement) | `day-02-control-plane-and-nodes.md` | — |
 | 03 | Architecture and the request flow — COMPLETE (steps 6-14 + partial step 4 traced live; CoreDNS taint question closed) | `day-03-architecture-request-flow.md` | — |
 | 04 | kubectl core verbs and output formats — COMPLETE (6 commands run + interpreted; dry-run scope finding; stopped-node recovery; Zscaler ErrImagePull diagnosed and fixed) | `day-04-kubectl-core.md` | — |
-| 05 | Namespaces, labels, selectors, annotations | `day-05-namespaces-labels-selectors.md` | — |
-| 06 | Pod anatomy, YAML, lifecycle, phases | `day-06-pod-basics.md` | Day 05 |
+| 05 | Namespaces, labels, selectors, annotations — COMPLETE (namespace isolation proven; label selector matching proven; annotation-vs-selector boundary proven) | `day-05-namespaces-labels-selectors.md` | — |
+| 06 | Pod anatomy, YAML, lifecycle, phases | `day-06-pod-basics.md` | — |
 
 ---
 
@@ -83,6 +80,7 @@ scheduled day arrives.
 | Steps 1-3 and 5 of the request-flow theory (auth, authz, etcd write) not yet directly observed | Day 03 | Day 39-41 (RBAC), Day 45 (a real denial), Day 65/80 (`etcdctl`) |
 | Why only some static Pods (`etcd`, `kube-apiserver`) got a fresh `Age` after a node reboot, while others apparently didn't | Day 03, `Nero` | Day 68 (kubelet/CRI internals) |
 | On a corporate machine, TLS-inspecting proxies (Zscaler) break image pulls inside any local cluster unless disabled or their CA is imported into the runtime's trust store — no permanent fix applied, disabling the proxy per session is the current workaround | Day 04, `IT-SAGARS` | Not currently scheduled — revisit if it recurs often enough to justify a permanent fix |
+| All 3 `nginx-trace` Pods in `default` showed a simultaneous restart (`RESTARTS: 1 (162m ago)`), noticed but not investigated | Day 05, `IT-SAGARS` | Not currently scheduled — check `describe`/Events if it recurs |
 
 ---
 

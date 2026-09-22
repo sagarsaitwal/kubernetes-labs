@@ -2,7 +2,7 @@
 
 Author: Sagar Saitwal
 
-Covers: Day 00 – Day 04. Updated after each day of Module 01.
+Covers: Day 00 – Day 05. Updated after each day of Module 01.
 
 This is **quick reference only** — the reasoning, the mistakes, and the full
 command output live in `journal/daily/`. Come here to look something up fast;
@@ -91,6 +91,28 @@ go there to see how it was actually learned.
 - **`ErrImagePull` → `ImagePullBackOff` is a progression, not two separate
   problems** — the first failed attempt, then the kubelet's retry/backoff
   state for the same unresolved cause.
+- **Namespaces partition one cluster into isolated virtual clusters.**
+  Object names only need to be unique *within* a namespace — the identical
+  Deployment name ran in both `default` and a new `dev` namespace with zero
+  conflict. Not everything is namespaced: namespaces themselves, Nodes, and
+  PersistentVolumes are cluster-scoped.
+- **`kind` ships a 5th default namespace** beyond the textbook 4
+  (`default`, `kube-node-lease`, `kube-public`, `kube-system`) —
+  `local-path-storage`, for its bundled dynamic-storage provisioner.
+- **Labels are the real mechanism connecting objects, not just tags.** A
+  Service/Deployment's `selector` is a live, continuously-evaluated label
+  query — `kubectl get pods -l app=...` runs the identical match by hand.
+- **Annotations are structurally excluded from selection — provable, not
+  just conventional.** `kubectl get <type> -l <key>=<value>` against a key
+  that only exists as an annotation returns nothing, even though the value
+  is genuinely present on the object (`-o yaml` shows it).
+- **`kubectl get <type> <name>` and `kubectl get <type> -l <selector>`
+  cannot be combined.** Naming an object already picks exactly one; adding
+  a selector is a contradiction the API rejects outright:
+  `error: name cannot be provided when a selector is specified`.
+- **A ReplicaSet's name hash is a pure function of its Pod template
+  content** — identical templates produce identical hashes regardless of
+  namespace or when they were applied.
 - **The scheduler filters nodes by taint before it ever scores them.** A
   Pod with no matching toleration never becomes a candidate for a tainted
   node — kind's control-plane node carries `node-role.kubernetes.io/
@@ -134,6 +156,11 @@ go there to see how it was actually learned.
 | `kubectl rollout restart deployment <name>` | Recreate a Deployment's Pods under a new ReplicaSet, unchanged manifest | Force a retry (e.g. a fresh image pull) without editing anything |
 | `docker ps -a --filter "name=<cluster>"` | All containers matching a name, including stopped | Tell "stopped" apart from "gone" — plain `docker ps` hides stopped ones |
 | `docker start <container>` | Resume a stopped container from its existing state | Recover a stopped kind node without recreating the cluster |
+| `kubectl create namespace <name>` | Create a new namespace | Isolate a set of objects — different team, environment, or experiment |
+| `kubectl get namespaces` | List all namespaces | Check what's actually on a cluster before assuming the textbook default set |
+| `kubectl get <type> -l <key>=<value>` | Filter by label selector | Find a set of objects by a meaningful attribute, same mechanism Services/Deployments use internally |
+| `kubectl apply -f <file> -n <namespace>` | Apply into a specific namespace | Test isolation, or deploy the same manifest into `dev`/`staging`/`prod` |
+| `kubectl annotate <type> <name> <key>=<value> --overwrite` | Add/update a non-selectable metadata field | Attach descriptive info (build info, contacts) that should never be queried by `-l` |
 
 ---
 
@@ -229,6 +256,18 @@ Pods stuck in ErrImagePull / ImagePullBackOff?
    -> "no such host" = DNS. "connection refused" = network path.
    -> all three look identical from the Pod's STATUS column alone -- the
       Events text is what tells them apart.
+
+`kubectl get <type> <name> -l <selector>` fails immediately?
+   -> "name cannot be provided when a selector is specified"
+   -> name = "get exactly this one object"; -l = "get a set matching a
+      condition" -- pick one, never both in the same call.
+
+Wondering whether something should be a label or an annotation?
+   -> will you ever need to SELECT a set of objects by it? -> label.
+   -> is it just descriptive metadata nobody will query by? -> annotation.
+   -> proof, not just the rule: `kubectl get <type> -l <key>=<value>`
+      returns nothing for a key that only exists as an annotation, even
+      though it's genuinely present on the object.
 ```
 
 ---
@@ -276,3 +315,9 @@ Pods stuck in ErrImagePull / ImagePullBackOff?
     corporate machine whose browser works fine on the same network?
 21. What's the practical difference between `ErrImagePull` and
     `ImagePullBackOff`?
+22. Two Deployments share the exact same name and both exist at once,
+    without conflict. How?
+23. Why does `kubectl get <type> <name> -l <selector>` fail instead of just
+    being redundant?
+24. You need to decide whether a piece of metadata should be a label or an
+    annotation. What's the deciding question?

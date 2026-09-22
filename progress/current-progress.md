@@ -2,12 +2,12 @@
 
 Author: Sagar Saitwal
 
-Last updated: 2026-09-21
+Last updated: 2026-09-22
 
 > This file is the single source of truth for where the learning stopped.
 > On any new session or new device, read this file FIRST.
 
-**Current Day: 05**
+**Current Day: 06**
 
 > The line above is machine-readable. `scripts/utilities/check-dependencies.sh`
 > parses it to decide which dependencies this day actually requires. Keep the
@@ -38,192 +38,135 @@ Module 01 — Kubernetes Fundamentals
 
 ## Current Topic
 
-Day 04 COMPLETED. Day 05 — Namespaces, labels, selectors, annotations —
-**queued, not started.** Teaching content was given in the previous session
-(concepts below), but **no commands were run yet** — resume directly with
-the six-command list, don't re-derive the plan. Re-explain only if it's been
-long enough that a refresher is warranted.
+Day 05 COMPLETED. Day 06 — Pod anatomy, YAML, lifecycle, phases — **not yet
+started.** No teaching content prepared yet.
 
 ## Current Subtopic
 
-### Concepts already taught, not yet exercised
-
-- **Namespaces** — partition one physical cluster into isolated virtual
-  clusters. Solves name collisions, gives a boundary for access control,
-  quotas, and environment separation (`dev`/`staging`/`prod` on one
-  cluster). Not everything is namespaced — Nodes, PersistentVolumes, and
-  namespaces themselves are cluster-scoped; Pods/Deployments/Services are
-  namespaced. Every command run so far implicitly targeted `default`.
-- **Labels** — key-value pairs on an object's metadata. Not just
-  organizational tags: this is the **actual mechanism** connecting objects
-  to each other. A Service finds its Pods by matching labels, not by name;
-  a Deployment finds its own Pods the same way, via `spec.selector`.
-- **Selectors** — the query language over labels. Equality-based
-  (`app=nginx-trace`) or set-based (`environment in (dev, staging)`). A
-  Service/Deployment's selector is a live, continuously-evaluated query, not
-  a one-time snapshot — add a matching label to any Pod and it's picked up
-  immediately, no code change.
-- **Annotations** — key-value pairs like labels, syntactically, but
-  **never used for selection**. Already seen one in the wild:
-  `kubectl.kubernetes.io/last-applied-configuration`, which `kubectl apply`
-  writes to itself to compute future diffs. Rule of thumb: if you'll ever
-  want to query a set of objects by it, it's a label; if it's just
-  descriptive metadata nobody will filter on, it's an annotation.
-
-### The six queued commands
-
-```bash
-# 1. Create a namespace — cluster-scoped object, new to the API server
-kubectl create namespace dev
-
-# 2. See it alongside the 4 that exist in every cluster by default
-kubectl get namespaces
-
-# 3. Filter by label instead of reading the whole list
-kubectl get pods -l app=nginx-trace
-
-# 4. Deploy the SAME manifest into the new namespace — proves isolation,
-#    since nothing about the object name collides with default's copy
-kubectl apply -f nginx-deployment.yaml -n dev
-
-# 5. Compare — two separate lists, same cluster
-kubectl get pods
-kubectl get pods -n dev
-
-# 6. Add an annotation, then try to SELECT by it — proves annotations are
-#    invisible to selectors, not just a naming convention
-kubectl annotate deployment nginx-trace learning-day=05 --overwrite
-kubectl get deployment nginx-trace -l learning-day=05
-```
-
-Expected result for #6's last line specifically: **empty** — that's the
-point of the exercise, not a failure.
+Day 06 has not started. This is the first day involving hand-written YAML
+(everything so far reused `fundamentals/labs/nginx-deployment.yaml`
+unmodified).
 
 ## Learning Status
 
 🟡 IN PROGRESS
 
-Day 00 through Day 04 are all fully COMPLETED. Day 05 is next.
+Day 00 through Day 05 are all fully COMPLETED. Day 06 is next.
 
 ## Last Completed Lab
 
-**Day 04 — kubectl core verbs and output formats.** COMPLETED. Ran and
-interpreted six commands (`-o yaml`, `-o jsonpath`, `--dry-run=server`,
-`-o custom-columns` + `--sort-by`, `logs`, `exec`) against `nginx-trace`,
-recreated fresh on this machine's cluster. Along the way: recovered a
-stopped `k8s-lab-control-plane` container (`docker start`, no data lost),
-and diagnosed a real `ErrImagePull` failure to a corporate TLS-inspecting
-proxy (Zscaler) — confirmed via the exact `x509: certificate signed by
-unknown authority` error in the Pod's Events, fixed by disabling the proxy
-and forcing a retry with `kubectl rollout restart`. New finding: `--dry-run=
-server` only previews admission on the submitted object, not on anything a
-controller creates afterward — the Day 03 toleration injection (which
-happens on the Pod, not the Deployment) correctly did not show up here.
+**Day 05 — Namespaces, labels, selectors, annotations.** COMPLETED. Created
+a `dev` namespace; proved isolation by applying the same manifest into both
+`default` and `dev` with no collision; filtered Pods by label selector;
+proved annotations are structurally excluded from selection (`kubectl get
+deployment -l learning-day=05` found nothing, even though the annotation
+was genuinely present). Corrected two of my own planning errors live: `kind`
+ships a 5th default namespace (`local-path-storage`), and `kubectl get`
+rejects combining an object name with a selector.
 
 ## Last Commands Practiced
 
 ```bash
-docker ps -a --filter "name=k8s-lab" --format 'table {{.Names}}\t{{.Status}}'
-docker start k8s-lab-control-plane
-kubectl apply -f nginx-deployment.yaml
-kubectl get deployment nginx-trace -o yaml
-kubectl get deployment nginx-trace -o jsonpath='{.spec.template.spec.containers[0].image}'
-kubectl apply -f nginx-deployment.yaml --dry-run=server -o yaml
-kubectl get pods -o custom-columns='NAME:.metadata.name,NODE:.spec.nodeName,RESTARTS:.status.containerStatuses[0].restartCount' --sort-by='.status.containerStatuses[0].restartCount'
-kubectl describe pod <pod> | grep -A5 Events
-kubectl rollout restart deployment nginx-trace
-kubectl logs <pod>
-kubectl exec -it <pod> -- cat /etc/nginx/nginx.conf
+kubectl create namespace dev
+kubectl get namespaces
+kubectl get pods -l app=nginx-trace
+kubectl apply -f nginx-deployment.yaml -n dev
+kubectl get pods
+kubectl get pods -n dev
+kubectl annotate deployment nginx-trace learning-day=05 --overwrite
+kubectl get deployment -l learning-day=05
 ```
 
 ## Last YAML Practiced
 
-`fundamentals/labs/nginx-deployment.yaml` — same file reused from Day 03
-(reapplied here because clusters don't travel between machines).
+`fundamentals/labs/nginx-deployment.yaml` — same file, reused a third time
+(applied into a second namespace, not edited). First hand-written YAML is
+still Day 06.
 
 ## What I Learned
 
-- `-o yaml` shows the fully stored object, including everything admission
-  and defaulting added beyond what was written by hand.
-- `-o jsonpath` prints with no trailing newline by design — easy to mistake
-  for "no output" when reading a terminal directly.
-- **`--dry-run=server` only previews admission on the object you submit** —
-  not on objects a controller will create afterward (Deployment → ReplicaSet
-  → Pod). The Day 03 toleration injection happens at Pod creation, a
-  separate API call, so a Deployment dry-run correctly shows nothing.
-- `docker ps` hides stopped containers by default; `-a` is required to tell
-  "stopped" apart from "gone."
-- A local cluster's container runtime (`containerd`, inside each kind node)
-  has its own TLS trust store, independent of the host OS — corporate
-  TLS-inspection proxies the browser handles transparently can still break
-  image pulls inside it.
-- `ErrImagePull` → `ImagePullBackOff` is a progression (first failure, then
-  retry/backoff state), not two different problems.
+- Namespaces partition one cluster into isolated virtual clusters — object
+  names only need to be unique *within* a namespace, proven by running the
+  identical Deployment name in both `default` and `dev` with zero conflict.
+- Labels are the actual mechanism Services/Deployments use to find their
+  Pods, not just organizational tags — `kubectl get pods -l app=...` runs
+  the same equality-match by hand.
+- Annotations are structurally excluded from selection — not a convention,
+  a hard API boundary, proven directly rather than asserted.
+- `kind` ships a 5th default namespace (`local-path-storage`) beyond the 4
+  a bare cluster has, for its bundled dynamic-storage provisioner.
+- `kubectl get <type> <name>` and `kubectl get <type> -l <selector>` are
+  mutually exclusive — combining them is rejected outright, not a warning.
+- A ReplicaSet's name hash is computed purely from its Pod template's
+  content — identical templates produce identical hashes regardless of
+  namespace or timing.
 
 ## What I Broke
 
-Nothing broken by anything run today. Two things found broken and fixed —
-see Mistakes Made below.
+Nothing. Two planning errors were mine (assistant), not Sagar's — see
+`journal/daily/day-05-namespaces-labels-selectors.md`, "What Failed."
+Neither affected cluster state; both were corrected live.
 
 ## Errors Encountered
 
 ```text
-tls: failed to verify certificate: x509: certificate signed by unknown authority
+error: name cannot be provided when a selector is specified
 ```
-(on all 3 `nginx-trace` Pods, pulling `nginx:1.27-alpine`)
+(from an invalid command the assistant gave — corrected within the session,
+not a Sagar misunderstanding, so not filed as a formal Mistake.)
 
 ## Root Cause
 
-Zscaler (corporate TLS-inspecting proxy) intercepting the HTTPS connection
-to `registry-1.docker.io`; `containerd` inside the kind node rejected the
-proxy's re-signed certificate as untrusted.
+`kubectl get` treats "one named object" and "a set matching a selector" as
+mutually exclusive query modes.
 
 ## How It Was Fixed
 
-Disabled Zscaler; `kubectl rollout restart deployment nginx-trace` to force
-fresh Pods and fresh pull attempts. All 3 reached `1/1 Running`.
+Dropped the object name, kept the selector:
+`kubectl get deployment -l learning-day=05`.
 
 ## Mistakes Made
 
-**Mistake 003** (see `journal/mistakes-and-lessons.md`) — named Zscaler as
-the likely cause before checking the Pod's actual `Events` text. Turned out
-correct, but the lesson is to confirm with the literal error message first,
-since `ErrImagePull` looks identical whether the real cause is TLS, DNS, or
-network path.
+None — no `journal/mistakes-and-lessons.md` entry for Day 05. Both
+corrections this session were the assistant's planning errors, not gaps in
+Sagar's understanding.
 
 ## Important Lessons
 
-- `docker ps -a` (not plain `docker ps`) is the right first check whenever a
-  cluster container seems to have "disappeared."
-- Read the exact `Events` error text before naming a root cause, even when a
-  guess turns out right.
+- Check `kubectl get namespaces` on a real cluster rather than assuming the
+  textbook-minimal default set — `kind` specifically ships an extra one.
+- `kubectl get`'s name and selector arguments cannot be combined — worth
+  remembering before scripting anything that filters a known object further.
 
 ## Unresolved Issues
 
-None blocking. Carried forward, unchanged from Day 03:
+None blocking. Carried forward:
 
-1. Steps 1-3 (client encode/POST, authn, authz) and step 5 (etcd write) of
-   the request flow — deferred to Day 39-41, Day 45, Day 65/80.
+1. Steps 1-3 and 5 of the request flow — deferred to Day 39-41, 45, 65/80.
 2. Why only some static Pods got a fresh `Age` after a node reboot —
    deferred to Day 68.
 3. CoreDNS anti-affinity fix — deliberately deferred to Day 34/36.
+4. **New:** all 3 `nginx-trace` Pods in `default` showed a simultaneous
+   restart, `RESTARTS: 1 (162m ago)`, noticed during Day 05's label-filter
+   command but not investigated — no `describe`/Events check done yet. Not
+   blocking; chase if it recurs or affects a future day's work.
 
 ## Next Topic
 
-Day 05 — Namespaces, labels, selectors, annotations.
+Day 06 — Pod anatomy, YAML, lifecycle, phases.
 
 ## Next Lab
 
-LAB 05 — not yet written. File to create:
-`journal/daily/day-05-namespaces-labels-selectors.md`.
+LAB 06 — not yet written. File to create:
+`journal/daily/day-06-pod-basics.md`.
 
 ## Overall Progress
 
-Day 04 of 130 COMPLETE. Day 05 starting next session. 0 of 30 modules
+Day 05 of 130 COMPLETE. Day 06 starting next session. 0 of 30 modules
 completed, 1 in progress. 0 of 10 projects.
 
 ```text
-[■                             ] 3%
+[■■                            ] 4%
 ```
 
 Full day-by-day plan: `progress/daily-plan.md`

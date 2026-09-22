@@ -16,6 +16,7 @@ verification output was actually seen. Nothing is added optimistically.
 | 2026-09-16 / 2026-09-18 | 02 | 01 | Control plane vs worker node — node-failure mechanism (Nero); static Pod manifests, stateless vs stateful test, two HA mechanisms, CoreDNS placement (IT-SAGARS) | Self-directed inspection of live cluster, no formal lab file | All 4 static manifests confirmed on disk; 3 read in full with flags matched against theory; CoreDNS gap found and root-caused with corroborating restart-count evidence |
 | 2026-09-18 | 03 | 01 | Architecture and the request flow — applied a real Deployment, traced steps 6-14 (+ partial 4) of the request-flow theory live | Self-directed trace exercise, no formal lab file | `kubectl get rs`/`get pods`/`describe pod` evidence for ReplicaSet creation, scheduling (`default-scheduler` named), image pull/create/start timing (10s total), and auto-injected tolerations proving admission ran; control-plane taint and CoreDNS's toleration for it both confirmed directly |
 | 2026-09-21 | 04 | 01 | kubectl core verbs and output formats — `-o yaml`, `-o jsonpath`, `--dry-run=server`, `-o custom-columns` + `--sort-by`, `logs`, `exec` | Self-directed exercise against `nginx-trace`, no formal lab file | All 6 commands run and interpreted against a live Deployment; found `--dry-run=server` only previews admission on the submitted object, not on objects a controller creates afterward; recovered a stopped node container; diagnosed and fixed a real `ErrImagePull` (Zscaler TLS interception) via `describe pod` Events |
+| 2026-09-22 | 05 | 01 | Namespaces, labels, selectors, annotations | Self-directed exercise (namespace creation, cross-namespace apply, label filter, annotation-vs-selector proof), no formal lab file | `dev` namespace created and isolated from `default` (same Deployment name, no collision); `kubectl get pods -l app=nginx-trace` confirmed selector matching; `kubectl get deployment -l learning-day=05` returned empty, proving annotations are excluded from selection |
 
 ### Findings recorded, fix deliberately deferred
 
@@ -28,7 +29,7 @@ verification output was actually seen. Nothing is added optimistically.
 | Item | Why it is not marked complete |
 |---|---|
 | Request-flow steps 1-3, 5 (auth, authz, etcd write) | No tooling yet to observe directly — deferred to Day 39-41, 45, 65/80 |
-| Day 05 — Namespaces, labels, selectors, annotations | Not yet started |
+| Day 06 — Pod anatomy, YAML, lifecycle, phases | Not yet started |
 
 ---
 

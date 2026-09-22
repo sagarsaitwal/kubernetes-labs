@@ -72,7 +72,7 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 
 ## Progress
 
-**Day 04 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS.** A 3-node
+**Day 05 of 130 — Module 01, Kubernetes Fundamentals — IN PROGRESS.** A 3-node
 `kind` cluster is running Kubernetes v1.37.0, verified healthy.
 
 | Day | Topic | Status | Evidence |
@@ -82,7 +82,8 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 | 02 | Control plane vs worker node, static Pod manifests, CoreDNS finding | **Complete** | [journal](journal/daily/day-02-control-plane-and-nodes.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 03 | Architecture and the request flow, traced live | **Complete** | [journal](journal/daily/day-03-architecture-request-flow.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 04 | kubectl output formats, `--dry-run=server` scope, image-pull troubleshooting | **Complete** | [journal](journal/daily/day-04-kubectl-core.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
-| 05 | Namespaces, labels, selectors, annotations | Not started | [lab (queued)](progress/next-steps.md) |
+| 05 | Namespaces, labels, selectors, annotations | **Complete** | [journal](journal/daily/day-05-namespaces-labels-selectors.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
+| 06 | Pod anatomy, YAML, lifecycle, phases | Not started | [lab (queued)](progress/next-steps.md) |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
 Where work stopped: [`progress/current-progress.md`](progress/current-progress.md)
@@ -94,7 +95,8 @@ bottom of this file.
 
 ### Next topic
 
-Day 05 — Namespaces, labels, selectors, annotations.
+Day 06 — Pod anatomy, YAML, lifecycle, phases. First hand-written YAML of
+the course.
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
@@ -278,6 +280,21 @@ API call made *after* the Deployment already exists; dry-run only previews
 the one request actually submitted, not the reconciliation cascade it goes
 on to trigger.
 
+**Labels and annotations look identical in an object's metadata — only one
+of them is queryable, and it's a hard boundary, not a convention.**
+
+```mermaid
+flowchart LR
+    OBJ["nginx-trace Deployment<br/>label: app=nginx-trace<br/>annotation: learning-day=05"]
+    OBJ -->|"kubectl get -l app=nginx-trace"| FOUND["found"]
+    OBJ -->|"kubectl get -l learning-day=05"| MISS["No resources found"]
+```
+
+Day 05: same object, two selector queries, one field type each. The label
+query found it; the annotation query — same syntax, same object, the value
+genuinely present — found nothing. Proves the API enforces the boundary
+rather than it being a naming habit.
+
 ---
 
 ## What I can explain, not just run
@@ -362,6 +379,19 @@ a day and a command behind it. Nothing here is written ahead of being verified.
   a host-level restart looked "missing," not stopped, until `docker ps -a`
   showed its actual status — recovered with a plain `docker start`, no
   cluster recreation needed.
+- **Namespaces isolate objects by name, not just by convention.** Applied
+  the identical `nginx-trace` Deployment manifest into both `default` and a
+  new `dev` namespace — no collision, two completely independent objects,
+  proven with real `kubectl get pods -n <ns>` output on each side.
+- **Labels and annotations enforce a hard selectability boundary.** Added
+  `learning-day=05` as an annotation, then queried for it with a label
+  selector — `No resources found`, even though the value was genuinely on
+  the object. Proof, not assertion, that only labels are ever matchable.
+- **A ReplicaSet's name hash depends only on its Pod template's content.**
+  The exact same hash (`647575f7d8`) showed up on a brand-new ReplicaSet in
+  the `dev` namespace as had appeared on Day 03's very first one in
+  `default` — same template text, same hash, regardless of namespace or
+  timing.
 
 ---
 
@@ -602,12 +632,13 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Six entries exist so far, born from real Day 01-04 experiments rather than
+Seven entries exist so far, born from real Day 01-05 experiments rather than
 written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md),
 [`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md),
+[`journal/daily/day-04-kubectl-core.md`](journal/daily/day-04-kubectl-core.md),
 and
-[`journal/daily/day-04-kubectl-core.md`](journal/daily/day-04-kubectl-core.md).
+[`journal/daily/day-05-namespaces-labels-selectors.md`](journal/daily/day-05-namespaces-labels-selectors.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -633,6 +664,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-16 / 09-18 | [02](journal/daily/day-02-control-plane-and-nodes.md) | Control plane vs worker node | COMPLETED |
 | 2026-09-18 | [03](journal/daily/day-03-architecture-request-flow.md) | Architecture and the request flow | COMPLETED |
 | 2026-09-21 | [04](journal/daily/day-04-kubectl-core.md) | kubectl core verbs and output formats | COMPLETED |
+| 2026-09-22 | [05](journal/daily/day-05-namespaces-labels-selectors.md) | Namespaces, labels, selectors, annotations | COMPLETED |
 
 ---
 
