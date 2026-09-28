@@ -2,7 +2,7 @@
 
 Author: Sagar Saitwal
 
-Covers: Day 06 – Day 07. Updated after each day of this module.
+Covers: Day 06 – Day 08. Updated after each day of this module.
 
 This is **quick reference only** — the reasoning, the mistakes, and the full
 command output live in `journal/daily/`. Come here to look something up fast;
@@ -64,6 +64,27 @@ Days 06-13).
 - **A container that redirects output to a file produces empty `kubectl
   logs`, correctly.** `kubectl logs` only ever captures stdout/stderr;
   `echo ... > file` never touches either.
+- **`resources.requests` is what the scheduler filters nodes against,
+  before scoring.** An impossible request guarantees a clean, reproducible
+  `Pending` — no ambiguity about cause.
+- **A `Pending` Pod's Events can list multiple independent scheduling
+  failures at once**, across different nodes — read all of them, not just
+  the first.
+- **`QoS Class` is a mechanical consequence of which `resources` fields
+  are set** — `BestEffort` (none set), `Burstable` (requests set, no
+  matching limits), `Guaranteed` (requests == limits for everything).
+- **`spec.restartPolicy: Always` (the unstated default on every Pod)
+  restarts a container after *any* exit, success or failure.** This is the
+  literal mechanism that turns one crash into a loop — restart backoff is
+  exponential, same mechanism as image-pull backoff, just a different
+  trigger.
+- **Pod-level `Status:` and container-level `State:` can look
+  contradictory — `Status: Running` at the top while the container says
+  `State: Waiting, Reason: CrashLoopBackOff` below it.** Read the container
+  block specifically; the top line alone can mislead.
+- **`kubectl logs --previous` is exactly one generation back, and not
+  guaranteed to still exist.** The runtime prunes old crash logs; grab
+  `--previous` early, before more restarts happen.
 
 ---
 
@@ -77,6 +98,7 @@ Days 06-13).
 | `kubectl delete pod <name>` | Deletes the Pod object directly | Proving/testing whether something owns a Pod — nothing recreates a bare one |
 | `kubectl logs <pod> -c <container>` | Logs from one specific container | Required once a Pod has more than one container |
 | `kubectl exec <pod> -c <container> -- <cmd>` | Run a command in one specific container | Same reason — kubectl won't guess which one you meant |
+| `kubectl logs <pod> --previous` | The prior terminated instance's logs, if the runtime still has them | Diagnosing a crash — grab this early, it's not guaranteed to persist |
 
 ---
 
@@ -102,6 +124,17 @@ the Pod fresh (no `rollout restart` equivalent for a bare Pod).
 while an earlier init container (`setup`) was stuck** — direct, unplanned
 proof that `restartPolicy: Always` does not let a sidecar skip ahead in
 the init sequence, even though its own image had nothing wrong with it.
+
+**A deliberately impossible `resources.requests.memory: "100Gi"` failed
+scheduling for TWO independent reasons at once** — 1 node excluded by the
+control-plane taint, 2 nodes excluded by insufficient memory — richer than
+the single-reason failure that was predicted going in.
+
+**A deliberately crashing container (`exit 1`) showed exponential restart
+backoff directly** — restart-gap timestamps grew `12s` → `30s` → `50s` in
+a live watch, same mechanism as image-pull backoff, different trigger.
+`kubectl logs --previous` failed by the 4th restart — the runtime had
+already pruned that instance's logs.
 
 ---
 
@@ -138,6 +171,20 @@ Recognize this error text? ("x509: certificate signed by unknown authority")
    -> Zscaler / corporate TLS interception (see Module 01's Mistake 003).
    -> disable the proxy; for a bare Pod, delete + reapply fresh rather
       than waiting out the existing backoff timer.
+
+A Pod stays Pending indefinitely?
+   -> kubectl describe pod <name>   -- check Node: (assigned at all?) and
+      Events: FailedScheduling -- read EVERY reason listed, not just one.
+   -> commonly: resources.requests no node can satisfy, an untolerated
+      taint, or a nodeSelector/affinity rule with no match.
+
+A Pod cycles Running / Error / CrashLoopBackOff, RESTARTS climbing?
+   -> kubectl describe pod <name>  -- Last State: Terminated, Exit Code.
+   -> kubectl logs <name>          -- current attempt.
+   -> kubectl logs <name> --previous -- prior attempt, IF still retained.
+   -> this is application-level (the container's own exit code/behavior),
+      not a scheduling or cluster problem -- restartPolicy: Always just
+      keeps bringing it back.
 ```
 
 ---
@@ -161,3 +208,11 @@ Recognize this error text? ("x509: certificate signed by unknown authority")
    not others?
 10. A container clearly ran successfully, but `kubectl logs` shows
     nothing for it. What's the likely explanation?
+11. Why can a single `Pending` Pod fail scheduling for more than one
+    reason at once?
+12. Why does a container that exits with code `0` still get restarted
+    under the default `restartPolicy`?
+13. Why might `kubectl logs --previous` fail even though the Pod has
+    clearly restarted multiple times?
+14. A Pod's top-level `Status:` says `Running`. Does that guarantee its
+    container is healthy right now?

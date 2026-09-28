@@ -26,16 +26,14 @@ cd /mnt/d/Kubernetes/fundamentals/labs
 kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
-**Day 07 is now fully COMPLETE** — see
-`journal/daily/day-07-multi-container-pods.md`. Nothing carries over except
+**Day 08 is now fully COMPLETE** — see
+`journal/daily/day-08-pod-troubleshooting.md`. Nothing carries over except
 the deliberately deferred items below.
 
-### Day 08 — first concrete action
+### Day 09 — first concrete action
 
-**Not started, no teaching content prepared yet.** Pod failures: `Pending`,
-`CrashLoopBackOff`, `ImagePullBackOff` — a dedicated break/fix day, and
-where the `Pending`/`Failed` phases deferred since Day 06 finally get
-direct, deliberate treatment.
+**Not started, no teaching content prepared yet.** ReplicaSets and why you
+rarely write one.
 
 ---
 
@@ -52,7 +50,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 | 05 | Namespaces, labels, selectors, annotations — COMPLETE (namespace isolation proven; label selector matching proven; annotation-vs-selector boundary proven) | `day-05-namespaces-labels-selectors.md` | — |
 | 06 | Pod anatomy, YAML, lifecycle, phases — COMPLETE (first hand-written manifest; Status vs State distinguished; no-controller finding proven by deletion) | `day-06-pod-basics.md` | — |
 | 07 | Multi-container Pods, sidecars, init containers — COMPLETE (init/sidecar ordering proven; shared-volume handoff proven; Zscaler recurrence fixed fast) | `day-07-multi-container-pods.md` | — |
-| 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | `day-08-pod-troubleshooting.md` | — |
+| 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) — COMPLETE (both engineered live; multi-reason scheduling failure found; `--previous` log-retention limit found) | `day-08-pod-troubleshooting.md` | — |
+| 09 | ReplicaSets and why you rarely write one | `day-09-replicasets.md` | — |
 
 ---
 
@@ -84,7 +83,6 @@ scheduled day arrives.
 | Why only some static Pods (`etcd`, `kube-apiserver`) got a fresh `Age` after a node reboot, while others apparently didn't | Day 03, `Nero` | Day 68 (kubelet/CRI internals) |
 | On a corporate machine, TLS-inspecting proxies (Zscaler) break image pulls inside any local cluster unless disabled or their CA is imported into the runtime's trust store — no permanent fix applied, disabling the proxy per session is the current workaround | Day 04, `IT-SAGARS` | Not currently scheduled — revisit if it recurs often enough to justify a permanent fix |
 | All 3 `nginx-trace` Pods in `default` showed a simultaneous restart (`RESTARTS: 1 (162m ago)`), noticed but not investigated | Day 05, `IT-SAGARS` | Not currently scheduled — check `describe`/Events if it recurs |
-| `Pending`/`Failed`/`CrashLoopBackOff` phases not yet observed directly — Day 06's Pod skipped `Pending` because its image was already cached | Day 06, `IT-SAGARS` | Day 08 (dedicated break/fix day) — starting next session |
 | **Structural gap found 2026-09-22, retroactive:** `fundamentals/README.md`'s original 7-lesson breakdown for Module 01 was abandoned when the project moved to the Day-based structure, and had gone stale (still showed Days 02-07's already-covered content as `NOT STARTED`). Fixed: table now maps each original lesson to the day(s) that actually cover it. Two genuine content gaps surfaced in the process — "Declarative vs imperative" and "Kubernetes objects and the API" were never given a dedicated day, only touched on piecemeal (Day 00/03/04) | Found 2026-09-22 while reconciling `fundamentals/README.md` | No dedicated day scheduled for either — "objects and the API" gets natural depth at Day 64 (apiserver internals); "declarative vs imperative" has no single obvious future day and may just stay a reinforced-throughout-the-course concept rather than get its own lesson |
 
 ---

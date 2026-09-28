@@ -72,7 +72,7 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 
 ## Progress
 
-**Day 07 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
+**Day 08 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
 cluster is running Kubernetes v1.37.0, verified healthy.
 
 | Day | Topic | Status | Evidence |
@@ -85,7 +85,8 @@ cluster is running Kubernetes v1.37.0, verified healthy.
 | 05 | Namespaces, labels, selectors, annotations | **Complete** | [journal](journal/daily/day-05-namespaces-labels-selectors.md) &middot; [cheatsheet](cheatsheets/module-01-fundamentals.md) |
 | 06 | Pod anatomy, YAML, lifecycle, phases — first hand-written manifest | **Complete** | [journal](journal/daily/day-06-pod-basics.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
 | 07 | Multi-container Pods, sidecars, init containers | **Complete** | [journal](journal/daily/day-07-multi-container-pods.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
-| 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | Not started | [lab (queued)](progress/next-steps.md) |
+| 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | **Complete** | [journal](journal/daily/day-08-pod-troubleshooting.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
+| 09 | ReplicaSets and why you rarely write one | Not started | [lab (queued)](progress/next-steps.md) |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
 Where work stopped: [`progress/current-progress.md`](progress/current-progress.md)
@@ -97,8 +98,7 @@ bottom of this file.
 
 ### Next topic
 
-Day 08 — Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff`
-(dedicated break/fix day).
+Day 09 — ReplicaSets and why you rarely write one.
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
@@ -335,6 +335,25 @@ sidecar's "always running" behavior only applies once it's had its turn —
 `restartPolicy: Always` doesn't let it skip ahead of an earlier,
 still-failing `initContainers` entry.
 
+**A `Pending` Pod's scheduling failure can have more than one independent
+cause at once — the scheduler reports each node's own reason, not just
+"no room anywhere."**
+
+```mermaid
+flowchart LR
+    P["pending-demo<br/>requests: 100Gi memory"]
+    P -->|"NoSchedule taint"| CP["k8s-lab-control-plane<br/>excluded"]
+    P -->|"Insufficient memory"| W1["k8s-lab-worker<br/>excluded"]
+    P -->|"Insufficient memory"| W2["k8s-lab-worker2<br/>excluded"]
+```
+
+Day 08: deliberately requested `100Gi` memory — an impossible ask on any
+node. `describe`'s Events reported `0/3 nodes are available: 1 node(s) had
+untolerated taint(s), 2 Insufficient memory` — **two** independent reasons,
+across three nodes, in one failed scheduling attempt. The engineered cause
+(insufficient memory) was real, but so was the Day 03 taint mechanism,
+firing independently on the third node for a completely different reason.
+
 ---
 
 ## What I can explain, not just run
@@ -457,6 +476,18 @@ a day and a command behind it. Nothing here is written ahead of being verified.
   a fast fix.** The exact `x509: certificate signed by unknown authority`
   text from Mistake 003 recurred on a different image (`busybox` instead
   of `nginx`) — recognized immediately from the error string alone.
+- **A `Pending` Pod's Events can list multiple independent scheduling
+  failures at once.** Deliberately requested `100Gi` memory; the scheduler
+  reported a taint exclusion on one node *and* insufficient memory on the
+  other two, in the same failed attempt — not a single blanket "no room."
+- **`spec.restartPolicy: Always` (the default on every Pod, unstated until
+  now) restarts a container after *any* exit, success or failure — the
+  literal mechanism that turns one crash into a loop.** Watched the exact
+  backoff pattern grow (`12s`→`30s`→`50s`) on a container built to always
+  fail.
+- **`kubectl logs --previous` is exactly one generation back, not a full
+  crash history.** By the 4th restart it returned `unable to retrieve
+  container logs` — the runtime had already pruned that instance.
 
 ---
 
@@ -697,15 +728,16 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Nine entries exist so far, born from real Day 01-07 experiments rather than
-written ahead of time — see the Troubleshooting Knowledge sections in
+Eleven entries exist so far, born from real Day 01-08 experiments rather
+than written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md),
 [`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md),
 [`journal/daily/day-04-kubectl-core.md`](journal/daily/day-04-kubectl-core.md),
 [`journal/daily/day-05-namespaces-labels-selectors.md`](journal/daily/day-05-namespaces-labels-selectors.md),
 [`journal/daily/day-06-pod-basics.md`](journal/daily/day-06-pod-basics.md),
+[`journal/daily/day-07-multi-container-pods.md`](journal/daily/day-07-multi-container-pods.md),
 and
-[`journal/daily/day-07-multi-container-pods.md`](journal/daily/day-07-multi-container-pods.md).
+[`journal/daily/day-08-pod-troubleshooting.md`](journal/daily/day-08-pod-troubleshooting.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -734,6 +766,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-22 | [05](journal/daily/day-05-namespaces-labels-selectors.md) | Namespaces, labels, selectors, annotations | COMPLETED |
 | 2026-09-22 | [06](journal/daily/day-06-pod-basics.md) | Pod anatomy, YAML, lifecycle, phases | COMPLETED |
 | 2026-09-22 | [07](journal/daily/day-07-multi-container-pods.md) | Multi-container Pods, sidecars, init containers | COMPLETED |
+| 2026-09-28 | [08](journal/daily/day-08-pod-troubleshooting.md) | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` | COMPLETED |
 
 ---
 
