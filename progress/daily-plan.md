@@ -28,8 +28,8 @@ break/fix cycle, one journal entry. At a steady 5 days per week this is about
 | | |
 |---|---|
 | Total planned days | 131 (Day 00 - Day 130) |
-| Completed | 11 (Day 00 - Day 10) |
-| In progress | 1 (Day 11 — not yet started) |
+| Completed | 12 (Day 00 - Day 11) |
+| In progress | 1 (Day 12 — not yet started) |
 | Projects | 10 |
 | Certifications targeted | CKA, CKAD, CKS |
 
@@ -62,7 +62,7 @@ Module 04-06. Goal: understand what actually runs, and what keeps it running.
 | 08 | Pod failures: Pending, CrashLoopBackOff, ImagePullBackOff | `day-08-pod-troubleshooting.md` | LAB 08 (break/fix) | COMPLETED |
 | 09 | ReplicaSets and why you rarely write one | `day-09-replicasets.md` | LAB 09 | COMPLETED |
 | 10 | Deployments and rolling updates | `day-10-deployments.md` | LAB 10 | COMPLETED |
-| 11 | Rollout history, rollback, update strategies | `day-11-rollouts-and-rollback.md` | LAB 11 | NOT STARTED |
+| 11 | Rollout history, rollback, update strategies | `day-11-rollouts-and-rollback.md` | LAB 11 | COMPLETED |
 | 12 | DaemonSets, Jobs, CronJobs | `day-12-daemonsets-jobs-cronjobs.md` | LAB 12 | NOT STARTED |
 | 13 | StatefulSets — identity and ordering | `day-13-statefulsets-intro.md` | LAB 13 | NOT STARTED |
 
@@ -465,3 +465,4 @@ Changes to this plan get recorded here rather than silently applied.
 | 2026-09-28 | Day 08 completed (on `IT-SAGARS`) | Deliberately engineered `Pending` (impossible `100Gi` memory request) and `CrashLoopBackOff` (guaranteed `exit 1`), both correct on the first attempt. Found a `Pending` Pod can fail scheduling for multiple independent reasons at once (taint + insufficient memory); confirmed exponential restart backoff live; got a real recurrence of the Day 06 Pod-phase-vs-container-state distinction; found `kubectl logs --previous` has a real log-retention limit. `ImagePullBackOff` deliberately not re-triggered — already proven Day 04/07 |
 | 2026-09-29 | Day 09 completed (on `IT-SAGARS`) | Wrote a bare ReplicaSet by hand (`replicaset-demo.yaml`), correct on the first attempt. Proved in 3 steps that a ReplicaSet reconciles only on Pod count, never content: template-edit left existing Pods untouched, scale-up and delete-and-replace both gave new Pods the current template. Unplanned bonus: found Day 03/04's old, superseded ReplicaSet still preserved at 0 replicas as rollback history. Correctly diagnosed a real `apply` `unchanged` result as an unsaved edit, not a cluster problem |
 | 2026-09-29 | Day 10 completed (on `IT-SAGARS`) | Wrote a Deployment by hand (`deployment-demo.yaml`), correct on the first attempt. Drove a full rolling-update-then-rollback cycle live: `rollout status` streamed real progress, `get rs` confirmed a new ReplicaSet generation took over, `rollout undo` reactivated the old ReplicaSet rather than rebuilding it. Recognized a recurrence of Day 09's `unchanged`/unsaved-edit pattern immediately. `rollout undo`'s `last-applied-configuration` warning surfaced a real, witnessed declarative/imperative drift |
+| 2026-09-29 | Day 11 completed (on `IT-SAGARS`) | Built a real 3-revision history with meaningful `CHANGE-CAUSE` annotations, then used `rollout undo --to-revision=1` to skip revision 2 entirely, confirmed via image/env-var checks and a caught mid-transition surge proving rollback reuses the rolling-update mechanism. Watched `strategy.type: Recreate` produce a real, live window with zero Pods `Ready` — direct contrast with `RollingUpdate`. Hit and corrected a real recurrence of the file/live-state drift, this time from Day 10's leftover `rollout undo` |

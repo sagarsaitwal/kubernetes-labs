@@ -2,7 +2,7 @@
 
 Author: Sagar Saitwal
 
-Covers: Day 06 – Day 10. Updated after each day of this module.
+Covers: Day 06 – Day 11. Updated after each day of this module.
 
 This is **quick reference only** — the reasoning, the mistakes, and the full
 command output live in `journal/daily/`. Come here to look something up fast;
@@ -119,6 +119,23 @@ Days 06-13).
   the live object, the YAML file, and `apply`'s own diff-tracking
   annotation can all genuinely disagree — the exact same category of
   drift as `kubectl scale`.
+- **`kubectl rollout undo --to-revision=N` jumps directly to any revision
+  in history**, skipping intermediate ones — plain `undo` only ever goes
+  one step back.
+- **`CHANGE-CAUSE` in `rollout history` requires deliberate recording** —
+  `kubectl annotate deployment <name> kubernetes.io/change-cause="..."
+  --overwrite` right after each `apply` that should be remembered.
+- **Rollback is the same rolling-update mechanism, not a separate one** —
+  it reactivates an existing ReplicaSet instead of creating a new one, and
+  `maxSurge` applies to it exactly the same way (a rollback can transiently
+  show more Pods than desired, same as any forward rollout).
+- **`spec.strategy.type: Recreate` produces a real, measurable
+  availability gap** — every old Pod terminates before any new one starts,
+  a genuine window with zero Pods `Ready`. Opposite risk profile from
+  `RollingUpdate`'s overlap; not a default choice, a deliberate one.
+- **Any imperative command leaves the YAML file stale relative to the
+  live object.** Always verify the real current state with a direct
+  command before assuming a file reflects what's actually running.
 
 ---
 
@@ -138,6 +155,8 @@ Days 06-13).
 | `kubectl rollout status deployment/<name>` | Blocks and streams live rollout progress | Watching a rolling update happen, instead of polling `get pods` by hand |
 | `kubectl rollout history deployment/<name>` | Lists revisions | Check `CHANGE-CAUSE` — empty unless deliberately recorded |
 | `kubectl rollout undo deployment/<name>` | Rolls back to the previous revision, reactivating its ReplicaSet | The actual capability a bare ReplicaSet never has |
+| `kubectl rollout undo deployment/<name> --to-revision=N` | Rolls back directly to revision `N`, skipping any in between | The previous revision isn't always the safe one to return to |
+| `kubectl annotate deployment <name> kubernetes.io/change-cause="..." --overwrite` | Records a human-readable reason for the current revision | Makes `rollout history` actually informative, not just numbered |
 
 ---
 
@@ -195,6 +214,20 @@ purpose via a rolling update and rollback, not found as leftover evidence.
 rollback, reapplying the file (still at the "new" image) would have
 reported `unchanged`, matching `apply`'s own stale annotation rather than
 what was actually running.
+
+**Day 11's first `apply` silently created `deployment-demo` on
+`1.28-alpine`, not the assumed `1.27-alpine`** — the file had been left at
+`1.28-alpine` since Day 10's `rollout undo`, which never touches files.
+Caught via `unchanged` on the next reapply, confirmed via
+`custom-columns`, and the plan adjusted to the real evidence.
+
+**`rollout undo --to-revision=1` on `deployment-demo` produced a
+transient 3-Pod state** — proof rollback uses the identical rolling-update
+engine (`maxSurge`) as any forward update, not a separate mechanism.
+
+**`strategy.type: Recreate` on `deployment-demo` showed a real window with
+zero Pods `Ready`** — both old Pods terminated together, then both new
+ones started together, only after the old ones were fully gone.
 
 ---
 
@@ -264,6 +297,13 @@ though the live object clearly differs from the file?
       genuinely disagree.
    -> prefer changing the YAML and reapplying over imperative commands
       when the change should be durable, not a one-off fix.
+
+Applied a manifest expecting one starting state, but got a different one?
+   -> cat <file>  -- confirm what's ACTUALLY saved on disk right now.
+   -> kubectl get pods -l <selector> -o custom-columns='...'  -- confirm
+      what's ACTUALLY running right now.
+   -> any prior imperative command (scale, rollout undo) may have left
+      the file stale relative to the live object -- verify, don't assume.
 ```
 
 ---
@@ -309,3 +349,9 @@ though the live object clearly differs from the file?
     `CHANGE-CAUSE`?
 21. Why does `kubectl rollout undo` warn about
     `last-applied-configuration`, and what could go wrong if ignored?
+22. What's the practical difference between `kubectl rollout undo` and
+    `kubectl rollout undo --to-revision=N`?
+23. Why is `CHANGE-CAUSE` empty by default, and what makes it populated?
+24. Why can a rollback transiently show more Pods than the Deployment's
+    desired replica count?
+25. What specifically does `Recreate` cost that `RollingUpdate` doesn't?

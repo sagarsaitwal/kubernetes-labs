@@ -72,7 +72,7 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 
 ## Progress
 
-**Day 10 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
+**Day 11 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
 cluster is running Kubernetes v1.37.0, verified healthy.
 
 | Day | Topic | Status | Evidence |
@@ -88,7 +88,8 @@ cluster is running Kubernetes v1.37.0, verified healthy.
 | 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | **Complete** | [journal](journal/daily/day-08-pod-troubleshooting.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
 | 09 | ReplicaSets and why you rarely write one | **Complete** | [journal](journal/daily/day-09-replicasets.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
 | 10 | Deployments and rolling updates | **Complete** | [journal](journal/daily/day-10-deployments.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
-| 11 | Rollout history, rollback, update strategies | Not started | [lab (queued)](progress/next-steps.md) |
+| 11 | Rollout history, rollback, update strategies | **Complete** | [journal](journal/daily/day-11-rollouts-and-rollback.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
+| 12 | DaemonSets, Jobs, CronJobs | Not started | [lab (queued)](progress/next-steps.md) |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
 Where work stopped: [`progress/current-progress.md`](progress/current-progress.md)
@@ -100,7 +101,7 @@ bottom of this file.
 
 ### Next topic
 
-Day 11 — Rollout history, rollback, update strategies.
+Day 12 — DaemonSets, Jobs, CronJobs.
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
@@ -396,6 +397,28 @@ inverse scaling (`0`↔`2`) at each stage. `rollout undo` reactivated the
 **same** old ReplicaSet object rather than creating a new one — the exact
 capability Day 09 proved a bare ReplicaSet structurally cannot offer.
 
+**`RollingUpdate` and `Recreate` have opposite risk profiles for the same
+goal — watched directly, not just described.**
+
+```mermaid
+flowchart TB
+    subgraph RU["RollingUpdate — Day 10"]
+        direction LR
+        A1["old Pods"] -.->|"overlap<br/>(surge above desired)"| A2["new Pods"]
+    end
+    subgraph RC["Recreate — Day 11"]
+        direction LR
+        B1["old Pods<br/>ALL terminate"] --> B2["zero Pods Ready"] --> B3["new Pods<br/>ALL start"]
+    end
+```
+
+Day 11: with `RollingUpdate`, old and new Pods coexisted the whole time —
+`READY` never dropped below the desired count, briefly rising above it
+instead (`maxSurge`). With `strategy.type: Recreate`, both old Pods
+reached `Terminating`→`Completed` together, and only *after* both were
+fully gone did either new Pod even reach `Pending` — a real, watched
+window with zero Pods `Ready`, not a hypothetical trade-off.
+
 ---
 
 ## What I can explain, not just run
@@ -554,6 +577,17 @@ a day and a command behind it. Nothing here is written ahead of being verified.
   After `rollout undo`, reapplying the same file would have reported
   `unchanged` — correctly reflecting `apply`'s own stale tracking
   annotation, not what was actually running.
+- **`kubectl rollout undo --to-revision=N` skips intermediate revisions
+  entirely.** Built a real 3-revision history, then jumped directly from
+  revision 3 to revision 1 — confirmed revision 2 was never touched, via
+  both the image and an environment variable's presence.
+- **Rollback is the same rolling-update engine, not a separate one.** A
+  targeted rollback transiently showed 3 Pods instead of 2 — the identical
+  `maxSurge` behavior any forward rollout shows.
+- **`Recreate`'s cost is measurable, not abstract.** Watched a real window
+  with zero Pods `Ready` — every old Pod gone before any new one started —
+  directly contrasted against `RollingUpdate`'s overlap from the day
+  before.
 
 ---
 
@@ -794,7 +828,7 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Thirteen entries exist so far, born from real Day 01-10 experiments rather
+Fourteen entries exist so far, born from real Day 01-11 experiments rather
 than written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md),
 [`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md),
@@ -804,8 +838,9 @@ than written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-07-multi-container-pods.md`](journal/daily/day-07-multi-container-pods.md),
 [`journal/daily/day-08-pod-troubleshooting.md`](journal/daily/day-08-pod-troubleshooting.md),
 [`journal/daily/day-09-replicasets.md`](journal/daily/day-09-replicasets.md),
+[`journal/daily/day-10-deployments.md`](journal/daily/day-10-deployments.md),
 and
-[`journal/daily/day-10-deployments.md`](journal/daily/day-10-deployments.md).
+[`journal/daily/day-11-rollouts-and-rollback.md`](journal/daily/day-11-rollouts-and-rollback.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -837,6 +872,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-28 | [08](journal/daily/day-08-pod-troubleshooting.md) | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` | COMPLETED |
 | 2026-09-29 | [09](journal/daily/day-09-replicasets.md) | ReplicaSets and why you rarely write one | COMPLETED |
 | 2026-09-29 | [10](journal/daily/day-10-deployments.md) | Deployments and rolling updates | COMPLETED |
+| 2026-09-29 | [11](journal/daily/day-11-rollouts-and-rollback.md) | Rollout history, rollback, update strategies | COMPLETED |
 
 ---
 
