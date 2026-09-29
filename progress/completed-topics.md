@@ -20,6 +20,7 @@ verification output was actually seen. Nothing is added optimistically.
 | 2026-09-22 | 06 | 01 | Pod anatomy, YAML, lifecycle, phases | First hand-written manifest (`manual-pod.yaml`), applied and deleted | `describe pod` showed Pod-level `Status:` vs. container-level `State:` distinctly; `kubectl get pods` after deletion confirmed no controller recreated the bare Pod |
 | 2026-09-22 | 07 | 02 | Multi-container Pods, sidecars, init containers | Second hand-written manifest (`multi-container-demo.yaml`) — 2 init containers (1 classic, 1 native sidecar) + 1 main container | `describe` confirmed sequential init ordering and completion-gating; `exec -c nginx` proved the shared-volume handoff with real file content; `logs -c log-sidecar` confirmed persistence; Zscaler recurrence (Mistake 003 pattern) recognized and fixed fast |
 | 2026-09-28 | 08 | 02 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | Third & fourth hand-written manifests (`pending-demo.yaml`, `crash-demo.yaml`), both engineered failures | `describe` Events showed a `Pending` Pod failing scheduling for 2 independent reasons at once; `-w` watch showed exponential restart backoff directly; `describe`'s Pod-level `Status:` vs. container-level `State:` recurred with real contradictory-looking output; `logs --previous` demonstrated the runtime's log-retention limit |
+| 2026-09-29 | 09 | 02 | ReplicaSets and why you rarely write one | Fifth hand-written manifest (`replicaset-demo.yaml`), first `apps/v1` object written by hand | Template-edit left existing Pods unaffected; scale-up and delete-and-replace both gave new Pods the current template; Day 03/04's leftover ReplicaSets found as unplanned rollback-history evidence; `apply`'s `unchanged` correctly diagnosed as an unsaved edit |
 
 ### Findings recorded, fix deliberately deferred
 
@@ -32,7 +33,7 @@ verification output was actually seen. Nothing is added optimistically.
 | Item | Why it is not marked complete |
 |---|---|
 | Request-flow steps 1-3, 5 (auth, authz, etcd write) | No tooling yet to observe directly — deferred to Day 39-41, 45, 65/80 |
-| Day 09 — ReplicaSets and why you rarely write one | Not yet started |
+| Day 10 — Deployments and rolling updates | Not yet started |
 | "Declarative vs imperative"; "Kubernetes objects and the API" as dedicated lessons | Touched piecemeal only — see `progress/next-steps.md` |
 
 ---

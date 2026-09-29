@@ -2,12 +2,12 @@
 
 Author: Sagar Saitwal
 
-Last updated: 2026-09-28
+Last updated: 2026-09-29
 
 > This file is the single source of truth for where the learning stopped.
 > On any new session or new device, read this file FIRST.
 
-**Current Day: 09**
+**Current Day: 10**
 
 > The line above is machine-readable. `scripts/utilities/check-dependencies.sh`
 > parses it to decide which dependencies this day actually requires. Keep the
@@ -38,115 +38,103 @@ Module 02 — Workloads
 
 ## Current Topic
 
-Day 08 COMPLETED. Day 09 — ReplicaSets and why you rarely write one — **not
-yet started.** No teaching content prepared yet.
+Day 09 COMPLETED. Day 10 — Deployments and rolling updates — **not yet
+started.** No teaching content prepared yet.
 
 ## Current Subtopic
 
-Day 09 has not started.
+Day 10 has not started. This is where the exact gap Day 09 proved (bare
+ReplicaSets never reconcile Pod content) gets its solution.
 
 ## Learning Status
 
 🟡 IN PROGRESS
 
-Day 00 through Day 08 are all fully COMPLETED. Day 09 is next.
+Day 00 through Day 09 are all fully COMPLETED. Day 10 is next.
 
 ## Last Completed Lab
 
-**Day 08 — Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff`
-(break/fix).** COMPLETED. Deliberately engineered both `Pending` (an
-impossible `100Gi` memory request) and `CrashLoopBackOff` (a container that
-always `exit 1`s), predicted the mechanism in advance, and confirmed it
-against real output. `ImagePullBackOff` deliberately not re-triggered —
-already thoroughly proven on Day 04 and Day 07. Two findings richer than
-predicted: `pending-demo` failed scheduling for **two independent reasons**
-across 3 nodes (control-plane taint + insufficient memory on both
-workers), and `kubectl logs --previous` failed with "unable to retrieve
-container logs" after 4 restarts — the runtime doesn't retain unlimited
-crash history. Also got a real, live recurrence of Day 06's Pod-phase vs.
-container-state distinction: `describe` showed `Status: Running` at the top
-while the container itself said `State: Waiting, Reason: CrashLoopBackOff`.
+**Day 09 — ReplicaSets and why you rarely write one.** COMPLETED. Wrote a
+bare ReplicaSet by hand (`fundamentals/labs/replicaset-demo.yaml`), correct
+on the first attempt. Proved in three concrete steps that a ReplicaSet
+reconciles only on Pod *count*, never *content*: editing the template and
+reapplying left existing Pods untouched; scaling up gave the new Pod the
+updated template; deleting an old-image Pod gave its replacement the
+updated template too. Unplanned bonus finding: `kubectl get rs` showed two
+leftover ReplicaSets from Day 03/04 (the pre/post-Zscaler-fix generations)
+— the old one preserved at `0` replicas as rollback history, a Deployment
+behavior a bare ReplicaSet would never give you. Also refined Day 02's Pod
+naming rule (single-hash naming isn't DaemonSet-specific, it's what any
+ReplicaSet produces directly) and correctly diagnosed a real `unchanged`
+`apply` result as an unsaved edit, not a failure.
 
 ## Last Commands Practiced
 
 ```bash
-kubectl apply -f pending-demo.yaml
-kubectl get pod pending-demo
-kubectl describe pod pending-demo
-kubectl delete pod pending-demo
-kubectl apply -f crash-demo.yaml
-kubectl get pod crash-demo -w
-kubectl describe pod crash-demo
-kubectl logs crash-demo
-kubectl logs crash-demo --previous
-kubectl delete pod crash-demo
+kubectl apply -f replicaset-demo.yaml
+kubectl get rs
+kubectl get pods -l app=rs-demo -o wide
+kubectl get pods -l app=rs-demo -o custom-columns='NAME:.metadata.name,IMAGE:.spec.containers[0].image'
+kubectl scale replicaset replicaset-demo --replicas=3
+kubectl delete pod replicaset-demo-kwn7t
+kubectl delete replicaset replicaset-demo
 ```
 
 ## Last YAML Practiced
 
-`fundamentals/labs/pending-demo.yaml` (impossible `resources.requests`) and
-`fundamentals/labs/crash-demo.yaml` (guaranteed-crash command) — third and
-fourth hand-written manifests of the course.
+`fundamentals/labs/replicaset-demo.yaml` — fifth hand-written manifest,
+first `apps/v1` object written by hand.
 
 ## What I Learned
 
-- `resources.requests` is what the scheduler filters nodes against, before
-  scoring — an impossible request guarantees a clean, reproducible
-  `Pending`.
-- The scheduler reports every node's specific failure reason independently
-  — a Pod can fail scheduling for more than one reason at once, across
-  different nodes.
-- `QoS Class` (`BestEffort`/`Burstable`/`Guaranteed`) is a direct,
-  mechanical consequence of which `resources` fields are set.
-- `spec.restartPolicy: Always` (the unstated default on every Pod so far)
-  restarts a container after *any* exit, success or failure — the literal
-  mechanism that turns one crash into a loop.
-- Restart backoff is exponential, same mechanism as image-pull backoff,
-  just triggered by a crashing container instead — confirmed directly via
-  growing restart-gap timestamps (`12s`→`30s`→`50s`).
-- Pod-level phase and container-level state can look contradictory for
-  real — `Status: Running` at the top, `State: Waiting,
-  Reason: CrashLoopBackOff` in the container block below it.
-- `kubectl logs --previous` only works if the runtime still retains the
-  prior terminated instance's log — not guaranteed, especially after
-  several more restarts.
+- A ReplicaSet's `spec.selector.matchLabels` must exactly match
+  `spec.template.metadata.labels`, or the object is invalid.
+- `kubectl get rs`'s `DESIRED`/`CURRENT`/`READY` columns can diverge and
+  each means something distinct.
+- A bare ReplicaSet's Pod naming is a single `<name>-<5 chars>` hash — this
+  isn't DaemonSet-specific, it's what any ReplicaSet produces directly; the
+  double-hash pattern specifically marks a Deployment-managed Pod.
+- A ReplicaSet reconciles only on count, never content — proven via
+  template-edit (no effect on existing Pods), scale-up (new Pod gets new
+  template), and delete-and-replace (replacement also gets new template).
+- A Deployment's old, superseded ReplicaSet is kept at `0` replicas as
+  rollback history — found unplanned, from Day 03/04's own leftover
+  objects.
+- `kubectl apply` returning `unchanged` is real diagnostic information —
+  it means the diff found nothing, which caught an unsaved edit before it
+  could confuse the exercise.
+- `kubectl scale` is imperative — it changes the live object directly,
+  silently diverging from whatever the YAML file says.
 
 ## What I Broke
 
-Nothing — both `Pending` and `CrashLoopBackOff` were deliberately
-engineered for this exercise, not accidental breaks.
+Nothing. One real, self-caught mistake: reapplied before actually saving
+an edit, correctly diagnosed from `apply`'s `unchanged` response rather
+than assumed to be a cluster problem.
 
 ## Errors Encountered
 
-```text
-0/3 nodes are available: 1 node(s) had untolerated taint(s), 2 Insufficient memory.
-unable to retrieve container logs for containerd://...
-```
+None — `unchanged` was a correct, honest response, not an error.
 
 ## Root Cause
 
-`pending-demo`: unschedulable resource request + pre-existing control-plane
-taint. `crash-demo`: a container that always exits non-zero, restarted
-forever by the Pod's default `restartPolicy: Always`. `--previous` error:
-containerd's log retention limit, not a bug.
+N/A — see What I Broke.
 
 ## How It Was Fixed
 
-Both were deliberate demonstrations, not incidents — cleaned up via
-`kubectl delete pod` once each exercise's evidence was captured.
+Re-edited the file, confirmed via `cat` before reapplying.
 
 ## Mistakes Made
 
-None — no `journal/mistakes-and-lessons.md` entry. Both engineered failures
-behaved as predicted, with richer real detail than expected rather than a
-wrong prediction.
+None — no `journal/mistakes-and-lessons.md` entry. The unsaved-edit moment
+was a normal edit-verify-retry step, not a Kubernetes misunderstanding.
 
 ## Important Lessons
 
-- A `Pending` Pod's Events can list multiple independent scheduling
-  failures at once — read all of them, not just the first.
-- Grab `--previous` crash logs as early as possible; the runtime does not
-  retain unlimited crash history.
+- `kubectl apply`'s `unchanged`/`configured` responses are themselves
+  diagnostic signal — trust them over assuming your own edit worked.
+- Never expect a bare ReplicaSet to roll out a template change to
+  already-existing Pods — verify with `custom-columns`, don't assume.
 
 ## Unresolved Issues
 
@@ -159,25 +147,26 @@ None blocking. Carried forward:
 4. All 3 `nginx-trace` Pods showed a simultaneous restart on Day 05
    (`162m ago`), not investigated — chase if it recurs.
 5. "Declarative vs imperative" and "Kubernetes objects and the API" never
-   given a dedicated day (found 2026-09-22 during `fundamentals/README.md`
-   reconciliation) — no fix scheduled, tracked in `next-steps.md`.
+   given a dedicated day — `kubectl scale`'s file/live-state drift today
+   is directly relevant evidence for the first one, still tracked in
+   `next-steps.md`.
 
 ## Next Topic
 
-Day 09 — ReplicaSets and why you rarely write one.
+Day 10 — Deployments and rolling updates.
 
 ## Next Lab
 
-LAB 09 — not yet written. File to create:
-`journal/daily/day-09-replicasets.md`.
+LAB 10 — not yet written. File to create:
+`journal/daily/day-10-deployments.md`.
 
 ## Overall Progress
 
-Day 08 of 130 COMPLETE. Day 09 starting next session. 0 of 30 modules
+Day 09 of 130 COMPLETE. Day 10 starting next session. 0 of 30 modules
 completed, 1 in progress. 0 of 10 projects.
 
 ```text
-[■■                            ] 6%
+[■■                            ] 7%
 ```
 
 Full day-by-day plan: `progress/daily-plan.md`

@@ -2,7 +2,7 @@
 
 Author: Sagar Saitwal
 
-Covers: Day 06 – Day 08. Updated after each day of this module.
+Covers: Day 06 – Day 09. Updated after each day of this module.
 
 This is **quick reference only** — the reasoning, the mistakes, and the full
 command output live in `journal/daily/`. Come here to look something up fast;
@@ -85,6 +85,25 @@ Days 06-13).
 - **`kubectl logs --previous` is exactly one generation back, and not
   guaranteed to still exist.** The runtime prunes old crash logs; grab
   `--previous` early, before more restarts happen.
+- **A ReplicaSet's `spec.selector.matchLabels` must exactly match
+  `spec.template.metadata.labels`** — it has to be able to find the Pods
+  its own template creates.
+- **A ReplicaSet reconciles only on Pod count, never content.** Editing
+  its template and reapplying updates the object instantly but leaves
+  every already-running Pod untouched. The template is only read at the
+  moment a new Pod is created — scale-up or replacing a deleted one.
+- **A bare ReplicaSet's Pod naming is a single `<name>-<5 chars>` hash** —
+  not DaemonSet-specific, it's what any ReplicaSet produces directly. The
+  double-hash pattern (`<name>-<10 chars>-<5 chars>`) specifically marks a
+  Deployment-managed Pod.
+- **A Deployment keeps its superseded ReplicaSet at `0` replicas rather
+  than deleting it** — rollback history a bare ReplicaSet never gives you.
+- **`kubectl apply` returning `unchanged` is real diagnostic signal.** It
+  means the diff found nothing — check whether your own edit actually
+  saved before assuming the cluster didn't do something.
+- **`kubectl scale` is imperative** — it changes the live object's
+  `spec.replicas` directly, silently diverging from what the YAML file on
+  disk says.
 
 ---
 
@@ -99,6 +118,8 @@ Days 06-13).
 | `kubectl logs <pod> -c <container>` | Logs from one specific container | Required once a Pod has more than one container |
 | `kubectl exec <pod> -c <container> -- <cmd>` | Run a command in one specific container | Same reason — kubectl won't guess which one you meant |
 | `kubectl logs <pod> --previous` | The prior terminated instance's logs, if the runtime still has them | Diagnosing a crash — grab this early, it's not guaranteed to persist |
+| `kubectl get rs` | ReplicaSets, with `DESIRED`/`CURRENT`/`READY` columns | Check whether a count mismatch, not just a Pod problem, is the actual issue |
+| `kubectl scale replicaset <name> --replicas=N` | Imperatively change replica count on the live object | Quick manual adjustment — remember it doesn't touch the YAML file |
 
 ---
 
@@ -135,6 +156,16 @@ backoff directly** — restart-gap timestamps grew `12s` → `30s` → `50s` in
 a live watch, same mechanism as image-pull backoff, different trigger.
 `kubectl logs --previous` failed by the 4th restart — the runtime had
 already pruned that instance's logs.
+
+**`kubectl get rs` on this cluster shows Day 03/04's old `nginx-trace`
+ReplicaSet still preserved at `DESIRED: 0`** — real, unplanned evidence
+that a Deployment keeps a superseded generation around as rollback
+history rather than deleting it, discovered while working through Day 09.
+
+**Editing `replicaset-demo`'s image and reapplying left both existing
+Pods on the old image; only a scale-up and a delete-and-replace produced
+Pods on the new one** — the count-vs-content reconciliation rule, proven
+in three predicted-then-verified steps rather than asserted.
 
 ---
 
@@ -185,6 +216,15 @@ A Pod cycles Running / Error / CrashLoopBackOff, RESTARTS climbing?
    -> this is application-level (the container's own exit code/behavior),
       not a scheduling or cluster problem -- restartPolicy: Always just
       keeps bringing it back.
+
+Edited a ReplicaSet's template, reapplied, but nothing seems to have changed?
+   -> kubectl apply -f <file>  -- "configured" (real diff) or "unchanged"
+      (edit never saved -- check the file's actual content first)?
+   -> if "configured": existing Pods will NOT pick up the change -- a
+      ReplicaSet only reads its template when creating a NEW Pod. Verify
+      with -o custom-columns=...IMAGE... rather than assuming.
+   -> there is no fix at the ReplicaSet level for this -- it's exactly
+      why Deployments exist (Day 10).
 ```
 
 ---
@@ -216,3 +256,11 @@ A Pod cycles Running / Error / CrashLoopBackOff, RESTARTS climbing?
     clearly restarted multiple times?
 14. A Pod's top-level `Status:` says `Running`. Does that guarantee its
     container is healthy right now?
+15. You edit a ReplicaSet's Pod template and reapply. What happens to
+    already-running Pods, and why?
+16. What's the practical difference between `kubectl scale` and editing
+    `replicas:` in a YAML file and reapplying?
+17. A Deployment's old ReplicaSet is still visible via `kubectl get rs`,
+    scaled to zero. What is it for?
+18. Why does a bare ReplicaSet's Pod get a single hash suffix while a
+    Deployment-managed one gets two?

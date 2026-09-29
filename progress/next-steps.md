@@ -26,14 +26,15 @@ cd /mnt/d/Kubernetes/fundamentals/labs
 kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
-**Day 08 is now fully COMPLETE** — see
-`journal/daily/day-08-pod-troubleshooting.md`. Nothing carries over except
-the deliberately deferred items below.
+**Day 09 is now fully COMPLETE** — see
+`journal/daily/day-09-replicasets.md`. Nothing carries over except the
+deliberately deferred items below.
 
-### Day 09 — first concrete action
+### Day 10 — first concrete action
 
-**Not started, no teaching content prepared yet.** ReplicaSets and why you
-rarely write one.
+**Not started, no teaching content prepared yet.** Deployments and rolling
+updates — this is where the exact gap Day 09 proved (a ReplicaSet never
+reconciles Pod content, only count) gets its solution.
 
 ---
 
@@ -51,7 +52,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 | 06 | Pod anatomy, YAML, lifecycle, phases — COMPLETE (first hand-written manifest; Status vs State distinguished; no-controller finding proven by deletion) | `day-06-pod-basics.md` | — |
 | 07 | Multi-container Pods, sidecars, init containers — COMPLETE (init/sidecar ordering proven; shared-volume handoff proven; Zscaler recurrence fixed fast) | `day-07-multi-container-pods.md` | — |
 | 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) — COMPLETE (both engineered live; multi-reason scheduling failure found; `--previous` log-retention limit found) | `day-08-pod-troubleshooting.md` | — |
-| 09 | ReplicaSets and why you rarely write one | `day-09-replicasets.md` | — |
+| 09 | ReplicaSets and why you rarely write one — COMPLETE (count-vs-content reconciliation proven in 3 steps; old ReplicaSets-as-rollback-history found) | `day-09-replicasets.md` | — |
+| 10 | Deployments and rolling updates | `day-10-deployments.md` | — |
 
 ---
 

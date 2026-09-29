@@ -72,7 +72,7 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 
 ## Progress
 
-**Day 08 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
+**Day 09 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
 cluster is running Kubernetes v1.37.0, verified healthy.
 
 | Day | Topic | Status | Evidence |
@@ -86,7 +86,8 @@ cluster is running Kubernetes v1.37.0, verified healthy.
 | 06 | Pod anatomy, YAML, lifecycle, phases — first hand-written manifest | **Complete** | [journal](journal/daily/day-06-pod-basics.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
 | 07 | Multi-container Pods, sidecars, init containers | **Complete** | [journal](journal/daily/day-07-multi-container-pods.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
 | 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | **Complete** | [journal](journal/daily/day-08-pod-troubleshooting.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
-| 09 | ReplicaSets and why you rarely write one | Not started | [lab (queued)](progress/next-steps.md) |
+| 09 | ReplicaSets and why you rarely write one | **Complete** | [journal](journal/daily/day-09-replicasets.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
+| 10 | Deployments and rolling updates | Not started | [lab (queued)](progress/next-steps.md) |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
 Where work stopped: [`progress/current-progress.md`](progress/current-progress.md)
@@ -98,7 +99,7 @@ bottom of this file.
 
 ### Next topic
 
-Day 09 — ReplicaSets and why you rarely write one.
+Day 10 — Deployments and rolling updates.
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
@@ -354,6 +355,24 @@ across three nodes, in one failed scheduling attempt. The engineered cause
 (insufficient memory) was real, but so was the Day 03 taint mechanism,
 firing independently on the third node for a completely different reason.
 
+**A ReplicaSet reconciles on Pod count, never Pod content — proven in
+three steps, not asserted.**
+
+```mermaid
+flowchart LR
+    T["Template edited<br/>1.27 → 1.28"] -->|"count already satisfied"| OLD["Existing Pods<br/>stay on 1.27"]
+    T -->|"scale-up needs a NEW Pod"| NEW1["New Pod<br/>gets 1.28"]
+    T -->|"delete + replace needs a NEW Pod"| NEW2["Replacement Pod<br/>gets 1.28"]
+```
+
+Day 09: edited `replicaset-demo`'s image and reapplied — both existing
+Pods stayed on `1.27-alpine`, because the desired count was already met
+and the controller never re-checks existing Pods' content. Scaling up
+produced a new Pod on `1.28-alpine`; deleting an old Pod produced a
+replacement also on `1.28-alpine`. The template is read only at the exact
+moment a Pod is created — this is the precise, provable gap a Deployment
+(Day 10) exists to close.
+
 ---
 
 ## What I can explain, not just run
@@ -488,6 +507,18 @@ a day and a command behind it. Nothing here is written ahead of being verified.
 - **`kubectl logs --previous` is exactly one generation back, not a full
   crash history.** By the 4th restart it returned `unable to retrieve
   container logs` — the runtime had already pruned that instance.
+- **A ReplicaSet reconciles on count, never content.** Edited a running
+  ReplicaSet's image and reapplied; both existing Pods stayed on the old
+  image. Only a scale-up and a delete-and-replace — both genuinely *new*
+  Pod creations — picked up the new one.
+- **A Deployment's superseded ReplicaSet is kept at `0` replicas, not
+  deleted.** Found unplanned: Day 03/04's original `nginx-trace`
+  ReplicaSet was still sitting there, scaled to zero — real rollback
+  history a bare ReplicaSet would never give you.
+- **`kubectl apply`'s `unchanged` vs. `configured` is real diagnostic
+  signal.** A reapply returned `unchanged`, correctly reflecting that an
+  edit hadn't actually been saved yet — caught before it could look like
+  a cluster problem.
 
 ---
 
@@ -728,7 +759,7 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Eleven entries exist so far, born from real Day 01-08 experiments rather
+Twelve entries exist so far, born from real Day 01-09 experiments rather
 than written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md),
 [`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md),
@@ -736,8 +767,9 @@ than written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-05-namespaces-labels-selectors.md`](journal/daily/day-05-namespaces-labels-selectors.md),
 [`journal/daily/day-06-pod-basics.md`](journal/daily/day-06-pod-basics.md),
 [`journal/daily/day-07-multi-container-pods.md`](journal/daily/day-07-multi-container-pods.md),
+[`journal/daily/day-08-pod-troubleshooting.md`](journal/daily/day-08-pod-troubleshooting.md),
 and
-[`journal/daily/day-08-pod-troubleshooting.md`](journal/daily/day-08-pod-troubleshooting.md).
+[`journal/daily/day-09-replicasets.md`](journal/daily/day-09-replicasets.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -767,6 +799,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-22 | [06](journal/daily/day-06-pod-basics.md) | Pod anatomy, YAML, lifecycle, phases | COMPLETED |
 | 2026-09-22 | [07](journal/daily/day-07-multi-container-pods.md) | Multi-container Pods, sidecars, init containers | COMPLETED |
 | 2026-09-28 | [08](journal/daily/day-08-pod-troubleshooting.md) | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` | COMPLETED |
+| 2026-09-29 | [09](journal/daily/day-09-replicasets.md) | ReplicaSets and why you rarely write one | COMPLETED |
 
 ---
 
