@@ -2,7 +2,7 @@
 
 Author: Sagar Saitwal
 
-Covers: Day 06 – Day 09. Updated after each day of this module.
+Covers: Day 06 – Day 10. Updated after each day of this module.
 
 This is **quick reference only** — the reasoning, the mistakes, and the full
 command output live in `journal/daily/`. Come here to look something up fast;
@@ -104,6 +104,21 @@ Days 06-13).
 - **`kubectl scale` is imperative** — it changes the live object's
   `spec.replicas` directly, silently diverging from what the YAML file on
   disk says.
+- **A Deployment's `spec` is structurally identical to a ReplicaSet's** —
+  `replicas`/`selector`/`template`. The entire difference is behavioral:
+  when the template changes, a Deployment creates a **new ReplicaSet
+  generation** and orchestrates a gradual handover, instead of silently
+  updating an object with no effect on existing Pods.
+- **`kubectl get deployment` has its own column set** — `READY`,
+  `UP-TO-DATE`, `AVAILABLE` — which can diverge mid-rollout.
+- **`kubectl rollout history`'s `CHANGE-CAUSE` isn't automatic.** It stays
+  `<none>` unless deliberately recorded (the deprecated `--record` flag,
+  or the `kubernetes.io/change-cause` annotation).
+- **`kubectl rollout undo` is imperative and does not update `kubectl
+  apply`'s `last-applied-configuration` annotation.** After a rollback,
+  the live object, the YAML file, and `apply`'s own diff-tracking
+  annotation can all genuinely disagree — the exact same category of
+  drift as `kubectl scale`.
 
 ---
 
@@ -120,6 +135,9 @@ Days 06-13).
 | `kubectl logs <pod> --previous` | The prior terminated instance's logs, if the runtime still has them | Diagnosing a crash — grab this early, it's not guaranteed to persist |
 | `kubectl get rs` | ReplicaSets, with `DESIRED`/`CURRENT`/`READY` columns | Check whether a count mismatch, not just a Pod problem, is the actual issue |
 | `kubectl scale replicaset <name> --replicas=N` | Imperatively change replica count on the live object | Quick manual adjustment — remember it doesn't touch the YAML file |
+| `kubectl rollout status deployment/<name>` | Blocks and streams live rollout progress | Watching a rolling update happen, instead of polling `get pods` by hand |
+| `kubectl rollout history deployment/<name>` | Lists revisions | Check `CHANGE-CAUSE` — empty unless deliberately recorded |
+| `kubectl rollout undo deployment/<name>` | Rolls back to the previous revision, reactivating its ReplicaSet | The actual capability a bare ReplicaSet never has |
 
 ---
 
@@ -166,6 +184,17 @@ history rather than deleting it, discovered while working through Day 09.
 Pods on the old image; only a scale-up and a delete-and-replace produced
 Pods on the new one** — the count-vs-content reconciliation rule, proven
 in three predicted-then-verified steps rather than asserted.
+
+**`deployment-demo`'s rolling update produced a second ReplicaSet
+(`7c589f7d94`) alongside the original (`6c6864b58f`), scaled inversely
+(0↔2) at each stage** — the exact Day 09 mechanism, this time driven on
+purpose via a rolling update and rollback, not found as leftover evidence.
+
+**`kubectl rollout undo` on `deployment-demo` warned about
+`last-applied-configuration` — and the warning was real.** After the
+rollback, reapplying the file (still at the "new" image) would have
+reported `unchanged`, matching `apply`'s own stale annotation rather than
+what was actually running.
 
 ---
 
@@ -225,6 +254,16 @@ Edited a ReplicaSet's template, reapplied, but nothing seems to have changed?
       with -o custom-columns=...IMAGE... rather than assuming.
    -> there is no fix at the ReplicaSet level for this -- it's exactly
       why Deployments exist (Day 10).
+
+After `kubectl rollout undo`, a later `apply` reports "unchanged" even
+though the live object clearly differs from the file?
+   -> apply's diff compares the file against its OWN last-applied-
+      configuration annotation, not directly against the live object.
+   -> rollout undo (like scale) changes the live object without updating
+      that annotation -- file, live object, and the annotation can all
+      genuinely disagree.
+   -> prefer changing the YAML and reapplying over imperative commands
+      when the change should be durable, not a one-off fix.
 ```
 
 ---
@@ -264,3 +303,9 @@ Edited a ReplicaSet's template, reapplied, but nothing seems to have changed?
     scaled to zero. What is it for?
 18. Why does a bare ReplicaSet's Pod get a single hash suffix while a
     Deployment-managed one gets two?
+19. What's actually different, behaviorally, between a Deployment and a
+    ReplicaSet, given their `spec` fields are otherwise identical?
+20. Why might `kubectl rollout history` show revisions with no useful
+    `CHANGE-CAUSE`?
+21. Why does `kubectl rollout undo` warn about
+    `last-applied-configuration`, and what could go wrong if ignored?

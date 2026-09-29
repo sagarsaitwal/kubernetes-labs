@@ -72,7 +72,7 @@ Full detail behind every box: [`progress/daily-plan.md`](progress/daily-plan.md)
 
 ## Progress
 
-**Day 09 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
+**Day 10 of 130 — Module 02, Workloads — IN PROGRESS.** A 3-node `kind`
 cluster is running Kubernetes v1.37.0, verified healthy.
 
 | Day | Topic | Status | Evidence |
@@ -87,7 +87,8 @@ cluster is running Kubernetes v1.37.0, verified healthy.
 | 07 | Multi-container Pods, sidecars, init containers | **Complete** | [journal](journal/daily/day-07-multi-container-pods.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
 | 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) | **Complete** | [journal](journal/daily/day-08-pod-troubleshooting.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
 | 09 | ReplicaSets and why you rarely write one | **Complete** | [journal](journal/daily/day-09-replicasets.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
-| 10 | Deployments and rolling updates | Not started | [lab (queued)](progress/next-steps.md) |
+| 10 | Deployments and rolling updates | **Complete** | [journal](journal/daily/day-10-deployments.md) &middot; [cheatsheet](cheatsheets/module-02-workloads.md) |
+| 11 | Rollout history, rollback, update strategies | Not started | [lab (queued)](progress/next-steps.md) |
 
 Full day-by-day plan (all 131 days): [`progress/daily-plan.md`](progress/daily-plan.md)
 Where work stopped: [`progress/current-progress.md`](progress/current-progress.md)
@@ -99,7 +100,7 @@ bottom of this file.
 
 ### Next topic
 
-Day 10 — Deployments and rolling updates.
+Day 11 — Rollout history, rollback, update strategies.
 
 <details>
 <summary><strong>Full 30-module progress table</strong></summary>
@@ -373,6 +374,28 @@ replacement also on `1.28-alpine`. The template is read only at the exact
 moment a Pod is created — this is the precise, provable gap a Deployment
 (Day 10) exists to close.
 
+**A rolling update is two ReplicaSets, briefly coexisting, scaled in
+opposite directions — and rollback is just running the same mechanism
+backward.**
+
+```mermaid
+flowchart LR
+    subgraph Rollout["kubectl apply (new image)"]
+        direction LR
+        RS1["RS old<br/>2 → 0"] -.->|"gradual handover"| RS2["RS new<br/>0 → 2"]
+    end
+    subgraph Rollback["kubectl rollout undo"]
+        direction LR
+        RS2b["RS new<br/>2 → 0"] -.->|"reverses it"| RS1b["RS old<br/>0 → 2<br/>(reactivated, not rebuilt)"]
+    end
+```
+
+Day 10: `kubectl rollout status` streamed the forward handover live
+(`1 old replicas are pending termination...`); `get rs` confirmed the
+inverse scaling (`0`↔`2`) at each stage. `rollout undo` reactivated the
+**same** old ReplicaSet object rather than creating a new one — the exact
+capability Day 09 proved a bare ReplicaSet structurally cannot offer.
+
 ---
 
 ## What I can explain, not just run
@@ -519,6 +542,18 @@ a day and a command behind it. Nothing here is written ahead of being verified.
   signal.** A reapply returned `unchanged`, correctly reflecting that an
   edit hadn't actually been saved yet — caught before it could look like
   a cluster problem.
+- **A Deployment's rolling update is two ReplicaSets scaled in opposite
+  directions, watched live.** `kubectl rollout status` streamed the exact
+  handover; `get rs` confirmed the old generation scaling to `0` while a
+  new one scaled up — the Day 09 mechanism, this time driven on purpose.
+- **`kubectl rollout undo` reactivates the old ReplicaSet — it doesn't
+  rebuild one.** Confirmed by name: the same ReplicaSet object that
+  existed before the rollout came back, scaled up again, rather than a
+  third new object appearing.
+- **Imperative commands can make `kubectl apply` lie to you, honestly.**
+  After `rollout undo`, reapplying the same file would have reported
+  `unchanged` — correctly reflecting `apply`'s own stale tracking
+  annotation, not what was actually running.
 
 ---
 
@@ -759,7 +794,7 @@ stuck `Terminating`, `NodeNotReady`, Service with no endpoints, DNS failure,
 Ingress 404, Ingress 502, NetworkPolicy blocking traffic, PVC `Pending`, mount
 failures, RBAC denied, probe failures, stuck rollouts, registry problems.
 
-Twelve entries exist so far, born from real Day 01-09 experiments rather
+Thirteen entries exist so far, born from real Day 01-10 experiments rather
 than written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-02-control-plane-and-nodes.md`](journal/daily/day-02-control-plane-and-nodes.md),
 [`journal/daily/day-03-architecture-request-flow.md`](journal/daily/day-03-architecture-request-flow.md),
@@ -768,8 +803,9 @@ than written ahead of time — see the Troubleshooting Knowledge sections in
 [`journal/daily/day-06-pod-basics.md`](journal/daily/day-06-pod-basics.md),
 [`journal/daily/day-07-multi-container-pods.md`](journal/daily/day-07-multi-container-pods.md),
 [`journal/daily/day-08-pod-troubleshooting.md`](journal/daily/day-08-pod-troubleshooting.md),
+[`journal/daily/day-09-replicasets.md`](journal/daily/day-09-replicasets.md),
 and
-[`journal/daily/day-09-replicasets.md`](journal/daily/day-09-replicasets.md).
+[`journal/daily/day-10-deployments.md`](journal/daily/day-10-deployments.md).
 Not yet promoted to the dedicated `troubleshooting/` folder — that happens once
 there are enough entries per category to organise, rather than one file per
 finding.
@@ -800,6 +836,7 @@ the fix, the verification, the lesson, and what comes next.
 | 2026-09-22 | [07](journal/daily/day-07-multi-container-pods.md) | Multi-container Pods, sidecars, init containers | COMPLETED |
 | 2026-09-28 | [08](journal/daily/day-08-pod-troubleshooting.md) | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` | COMPLETED |
 | 2026-09-29 | [09](journal/daily/day-09-replicasets.md) | ReplicaSets and why you rarely write one | COMPLETED |
+| 2026-09-29 | [10](journal/daily/day-10-deployments.md) | Deployments and rolling updates | COMPLETED |
 
 ---
 

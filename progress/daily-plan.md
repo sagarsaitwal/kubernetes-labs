@@ -28,8 +28,8 @@ break/fix cycle, one journal entry. At a steady 5 days per week this is about
 | | |
 |---|---|
 | Total planned days | 131 (Day 00 - Day 130) |
-| Completed | 10 (Day 00 - Day 09) |
-| In progress | 1 (Day 10 — not yet started) |
+| Completed | 11 (Day 00 - Day 10) |
+| In progress | 1 (Day 11 — not yet started) |
 | Projects | 10 |
 | Certifications targeted | CKA, CKAD, CKS |
 
@@ -61,7 +61,7 @@ Module 04-06. Goal: understand what actually runs, and what keeps it running.
 | 07 | Multi-container Pods, sidecars, init containers | `day-07-multi-container-pods.md` | LAB 07 | COMPLETED |
 | 08 | Pod failures: Pending, CrashLoopBackOff, ImagePullBackOff | `day-08-pod-troubleshooting.md` | LAB 08 (break/fix) | COMPLETED |
 | 09 | ReplicaSets and why you rarely write one | `day-09-replicasets.md` | LAB 09 | COMPLETED |
-| 10 | Deployments and rolling updates | `day-10-deployments.md` | LAB 10 | NOT STARTED |
+| 10 | Deployments and rolling updates | `day-10-deployments.md` | LAB 10 | COMPLETED |
 | 11 | Rollout history, rollback, update strategies | `day-11-rollouts-and-rollback.md` | LAB 11 | NOT STARTED |
 | 12 | DaemonSets, Jobs, CronJobs | `day-12-daemonsets-jobs-cronjobs.md` | LAB 12 | NOT STARTED |
 | 13 | StatefulSets — identity and ordering | `day-13-statefulsets-intro.md` | LAB 13 | NOT STARTED |
@@ -464,3 +464,4 @@ Changes to this plan get recorded here rather than silently applied.
 | 2026-09-22 | Day 07 completed (on `IT-SAGARS`) | Wrote a 3-container Pod by hand (`multi-container-demo.yaml`) — 1 classic init container, 1 native sidecar (`restartPolicy: Always`), 1 main container — correct on the first attempt. Confirmed sequential init ordering and completion-gating, a native sidecar still waiting its turn despite `restartPolicy: Always`, and the shared-volume handoff with real file content. Hit a recurring Zscaler `ImagePullBackOff` (same signature as Mistake 003), recognized and fixed fast rather than requiring fresh diagnosis |
 | 2026-09-28 | Day 08 completed (on `IT-SAGARS`) | Deliberately engineered `Pending` (impossible `100Gi` memory request) and `CrashLoopBackOff` (guaranteed `exit 1`), both correct on the first attempt. Found a `Pending` Pod can fail scheduling for multiple independent reasons at once (taint + insufficient memory); confirmed exponential restart backoff live; got a real recurrence of the Day 06 Pod-phase-vs-container-state distinction; found `kubectl logs --previous` has a real log-retention limit. `ImagePullBackOff` deliberately not re-triggered — already proven Day 04/07 |
 | 2026-09-29 | Day 09 completed (on `IT-SAGARS`) | Wrote a bare ReplicaSet by hand (`replicaset-demo.yaml`), correct on the first attempt. Proved in 3 steps that a ReplicaSet reconciles only on Pod count, never content: template-edit left existing Pods untouched, scale-up and delete-and-replace both gave new Pods the current template. Unplanned bonus: found Day 03/04's old, superseded ReplicaSet still preserved at 0 replicas as rollback history. Correctly diagnosed a real `apply` `unchanged` result as an unsaved edit, not a cluster problem |
+| 2026-09-29 | Day 10 completed (on `IT-SAGARS`) | Wrote a Deployment by hand (`deployment-demo.yaml`), correct on the first attempt. Drove a full rolling-update-then-rollback cycle live: `rollout status` streamed real progress, `get rs` confirmed a new ReplicaSet generation took over, `rollout undo` reactivated the old ReplicaSet rather than rebuilding it. Recognized a recurrence of Day 09's `unchanged`/unsaved-edit pattern immediately. `rollout undo`'s `last-applied-configuration` warning surfaced a real, witnessed declarative/imperative drift |

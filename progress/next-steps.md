@@ -26,15 +26,16 @@ cd /mnt/d/Kubernetes/fundamentals/labs
 kind create cluster --name k8s-lab --config kind-cluster-config.yaml
 ```
 
-**Day 09 is now fully COMPLETE** — see
-`journal/daily/day-09-replicasets.md`. Nothing carries over except the
+**Day 10 is now fully COMPLETE** — see
+`journal/daily/day-10-deployments.md`. Nothing carries over except the
 deliberately deferred items below.
 
-### Day 10 — first concrete action
+### Day 11 — first concrete action
 
-**Not started, no teaching content prepared yet.** Deployments and rolling
-updates — this is where the exact gap Day 09 proved (a ReplicaSet never
-reconciles Pod content, only count) gets its solution.
+**Not started, no teaching content prepared yet.** Rollout history,
+rollback, update strategies — deeper than Day 10's introduction:
+`maxSurge`/`maxUnavailable` tuning, rollback to a specific revision (not
+just "previous"), and `Recreate` vs `RollingUpdate`.
 
 ---
 
@@ -53,7 +54,8 @@ Full plan: `progress/daily-plan.md` (Day 00 - Day 130)
 | 07 | Multi-container Pods, sidecars, init containers — COMPLETE (init/sidecar ordering proven; shared-volume handoff proven; Zscaler recurrence fixed fast) | `day-07-multi-container-pods.md` | — |
 | 08 | Pod failures: `Pending`, `CrashLoopBackOff`, `ImagePullBackOff` (break/fix) — COMPLETE (both engineered live; multi-reason scheduling failure found; `--previous` log-retention limit found) | `day-08-pod-troubleshooting.md` | — |
 | 09 | ReplicaSets and why you rarely write one — COMPLETE (count-vs-content reconciliation proven in 3 steps; old ReplicaSets-as-rollback-history found) | `day-09-replicasets.md` | — |
-| 10 | Deployments and rolling updates | `day-10-deployments.md` | — |
+| 10 | Deployments and rolling updates — COMPLETE (full rolling-update-then-rollback cycle proven live; declarative/imperative drift witnessed via `rollout undo`) | `day-10-deployments.md` | — |
+| 11 | Rollout history, rollback, update strategies | `day-11-rollouts-and-rollback.md` | — |
 
 ---
 
@@ -86,6 +88,7 @@ scheduled day arrives.
 | On a corporate machine, TLS-inspecting proxies (Zscaler) break image pulls inside any local cluster unless disabled or their CA is imported into the runtime's trust store — no permanent fix applied, disabling the proxy per session is the current workaround | Day 04, `IT-SAGARS` | Not currently scheduled — revisit if it recurs often enough to justify a permanent fix |
 | All 3 `nginx-trace` Pods in `default` showed a simultaneous restart (`RESTARTS: 1 (162m ago)`), noticed but not investigated | Day 05, `IT-SAGARS` | Not currently scheduled — check `describe`/Events if it recurs |
 | **Structural gap found 2026-09-22, retroactive:** `fundamentals/README.md`'s original 7-lesson breakdown for Module 01 was abandoned when the project moved to the Day-based structure, and had gone stale (still showed Days 02-07's already-covered content as `NOT STARTED`). Fixed: table now maps each original lesson to the day(s) that actually cover it. Two genuine content gaps surfaced in the process — "Declarative vs imperative" and "Kubernetes objects and the API" were never given a dedicated day, only touched on piecemeal (Day 00/03/04) | Found 2026-09-22 while reconciling `fundamentals/README.md` | No dedicated day scheduled for either — "objects and the API" gets natural depth at Day 64 (apiserver internals); "declarative vs imperative" has no single obvious future day and may just stay a reinforced-throughout-the-course concept rather than get its own lesson |
+| **Further evidence for "declarative vs imperative" gap (above), not a new item:** `kubectl rollout undo` (Day 10) is imperative and does not update `apply`'s `last-applied-configuration` annotation — a real, witnessed drift between the YAML file, the live object, and `apply`'s own diff-tracking state, following `kubectl scale`'s identical drift on Day 09 | Day 09-10, `IT-SAGARS` | Same as above — no dedicated day, reinforced-throughout-the-course concept |
 
 ---
 

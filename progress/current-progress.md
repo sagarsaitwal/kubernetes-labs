@@ -7,7 +7,7 @@ Last updated: 2026-09-29
 > This file is the single source of truth for where the learning stopped.
 > On any new session or new device, read this file FIRST.
 
-**Current Day: 10**
+**Current Day: 11**
 
 > The line above is machine-readable. `scripts/utilities/check-dependencies.sh`
 > parses it to decide which dependencies this day actually requires. Keep the
@@ -38,83 +38,78 @@ Module 02 — Workloads
 
 ## Current Topic
 
-Day 09 COMPLETED. Day 10 — Deployments and rolling updates — **not yet
-started.** No teaching content prepared yet.
+Day 10 COMPLETED. Day 11 — Rollout history, rollback, update strategies —
+**not yet started.** No teaching content prepared yet.
 
 ## Current Subtopic
 
-Day 10 has not started. This is where the exact gap Day 09 proved (bare
-ReplicaSets never reconcile Pod content) gets its solution.
+Day 11 has not started. This goes deeper than Day 10's introduction:
+`maxSurge`/`maxUnavailable` tuning, rollback to a specific revision (not
+just "previous"), and `Recreate` vs `RollingUpdate` strategies.
 
 ## Learning Status
 
 🟡 IN PROGRESS
 
-Day 00 through Day 09 are all fully COMPLETED. Day 10 is next.
+Day 00 through Day 10 are all fully COMPLETED. Day 11 is next.
 
 ## Last Completed Lab
 
-**Day 09 — ReplicaSets and why you rarely write one.** COMPLETED. Wrote a
-bare ReplicaSet by hand (`fundamentals/labs/replicaset-demo.yaml`), correct
-on the first attempt. Proved in three concrete steps that a ReplicaSet
-reconciles only on Pod *count*, never *content*: editing the template and
-reapplying left existing Pods untouched; scaling up gave the new Pod the
-updated template; deleting an old-image Pod gave its replacement the
-updated template too. Unplanned bonus finding: `kubectl get rs` showed two
-leftover ReplicaSets from Day 03/04 (the pre/post-Zscaler-fix generations)
-— the old one preserved at `0` replicas as rollback history, a Deployment
-behavior a bare ReplicaSet would never give you. Also refined Day 02's Pod
-naming rule (single-hash naming isn't DaemonSet-specific, it's what any
-ReplicaSet produces directly) and correctly diagnosed a real `unchanged`
-`apply` result as an unsaved edit, not a failure.
+**Day 10 — Deployments and rolling updates.** COMPLETED. Wrote a
+Deployment by hand (`fundamentals/labs/deployment-demo.yaml`), correct on
+the first attempt. Drove a full rolling-update-then-rollback cycle:
+watched `kubectl rollout status` stream real progress
+(`1 old replicas are pending termination...`), confirmed a **new**
+ReplicaSet generation took over (the exact Day 09 mechanism, now produced
+deliberately), then used `kubectl rollout undo` to roll back — confirming
+the **old** ReplicaSet was reactivated rather than rebuilt. Hit the same
+`unchanged`/unsaved-edit pattern as Day 09, recognized immediately this
+time. `rollout undo`'s warning about `last-applied-configuration` turned
+out to be a real, witnessed instance of the "declarative vs imperative"
+drift flagged as an open gap since Day 09 — not boilerplate.
 
 ## Last Commands Practiced
 
 ```bash
-kubectl apply -f replicaset-demo.yaml
-kubectl get rs
-kubectl get pods -l app=rs-demo -o wide
-kubectl get pods -l app=rs-demo -o custom-columns='NAME:.metadata.name,IMAGE:.spec.containers[0].image'
-kubectl scale replicaset replicaset-demo --replicas=3
-kubectl delete pod replicaset-demo-kwn7t
-kubectl delete replicaset replicaset-demo
+kubectl apply -f deployment-demo.yaml
+kubectl get deployment deployment-demo
+kubectl get rs -l app=deploy-demo
+kubectl get pods -l app=deploy-demo -o custom-columns='NAME:.metadata.name,IMAGE:.spec.containers[0].image'
+kubectl rollout status deployment/deployment-demo
+kubectl rollout history deployment/deployment-demo
+kubectl rollout undo deployment/deployment-demo
+kubectl delete deployment deployment-demo
 ```
 
 ## Last YAML Practiced
 
-`fundamentals/labs/replicaset-demo.yaml` — fifth hand-written manifest,
-first `apps/v1` object written by hand.
+`fundamentals/labs/deployment-demo.yaml` — sixth hand-written manifest,
+first Deployment written by hand.
 
 ## What I Learned
 
-- A ReplicaSet's `spec.selector.matchLabels` must exactly match
-  `spec.template.metadata.labels`, or the object is invalid.
-- `kubectl get rs`'s `DESIRED`/`CURRENT`/`READY` columns can diverge and
-  each means something distinct.
-- A bare ReplicaSet's Pod naming is a single `<name>-<5 chars>` hash — this
-  isn't DaemonSet-specific, it's what any ReplicaSet produces directly; the
-  double-hash pattern specifically marks a Deployment-managed Pod.
-- A ReplicaSet reconciles only on count, never content — proven via
-  template-edit (no effect on existing Pods), scale-up (new Pod gets new
-  template), and delete-and-replace (replacement also gets new template).
-- A Deployment's old, superseded ReplicaSet is kept at `0` replicas as
-  rollback history — found unplanned, from Day 03/04's own leftover
-  objects.
-- `kubectl apply` returning `unchanged` is real diagnostic information —
-  it means the diff found nothing, which caught an unsaved edit before it
-  could confuse the exercise.
-- `kubectl scale` is imperative — it changes the live object directly,
-  silently diverging from whatever the YAML file says.
+- A Deployment's `spec` is structurally identical to a ReplicaSet's —
+  `replicas`/`selector`/`template` — the entire difference is behavioral.
+- `kubectl get deployment` has its own column set: `READY`, `UP-TO-DATE`,
+  `AVAILABLE` — these can diverge mid-rollout.
+- A rolling update creates a new ReplicaSet generation and gradually shifts
+  Pods from old to new — watched live via `rollout status`.
+- `rollout history`'s `CHANGE-CAUSE` isn't automatic — it stays `<none>`
+  unless deliberately recorded.
+- `rollout undo` is imperative — it reactivates the old ReplicaSet but does
+  **not** update `kubectl apply`'s `last-applied-configuration` annotation,
+  a real source of drift between file, live object, and `apply`'s own
+  diff-tracking state.
 
 ## What I Broke
 
-Nothing. One real, self-caught mistake: reapplied before actually saving
-an edit, correctly diagnosed from `apply`'s `unchanged` response rather
-than assumed to be a cluster problem.
+Nothing. One recurrence of Day 09's `unchanged`/unsaved-edit pattern,
+recognized immediately rather than re-diagnosed.
 
 ## Errors Encountered
 
-None — `unchanged` was a correct, honest response, not an error.
+None — `unchanged` and the `rollout undo` warning were both correct,
+informative, non-error output.
 
 ## Root Cause
 
@@ -122,19 +117,19 @@ N/A — see What I Broke.
 
 ## How It Was Fixed
 
-Re-edited the file, confirmed via `cat` before reapplying.
+N/A.
 
 ## Mistakes Made
 
-None — no `journal/mistakes-and-lessons.md` entry. The unsaved-edit moment
-was a normal edit-verify-retry step, not a Kubernetes misunderstanding.
+None — no `journal/mistakes-and-lessons.md` entry.
 
 ## Important Lessons
 
-- `kubectl apply`'s `unchanged`/`configured` responses are themselves
-  diagnostic signal — trust them over assuming your own edit worked.
-- Never expect a bare ReplicaSet to roll out a template change to
-  already-existing Pods — verify with `custom-columns`, don't assume.
+- Mixing imperative commands (`scale`, `rollout undo`) with a declarative
+  `apply` workflow on the same object can cause the file, the live object,
+  and `apply`'s own tracking annotation to genuinely disagree.
+- Recognizing a previously-documented pattern (yesterday's `unchanged`)
+  immediately, without re-diagnosing, is itself a skill worth noticing.
 
 ## Unresolved Issues
 
@@ -147,26 +142,25 @@ None blocking. Carried forward:
 4. All 3 `nginx-trace` Pods showed a simultaneous restart on Day 05
    (`162m ago`), not investigated — chase if it recurs.
 5. "Declarative vs imperative" and "Kubernetes objects and the API" never
-   given a dedicated day — `kubectl scale`'s file/live-state drift today
-   is directly relevant evidence for the first one, still tracked in
-   `next-steps.md`.
+   given a dedicated day — Day 10's `rollout undo` drift is further real
+   evidence for the first one, still tracked in `next-steps.md`.
 
 ## Next Topic
 
-Day 10 — Deployments and rolling updates.
+Day 11 — Rollout history, rollback, update strategies.
 
 ## Next Lab
 
-LAB 10 — not yet written. File to create:
-`journal/daily/day-10-deployments.md`.
+LAB 11 — not yet written. File to create:
+`journal/daily/day-11-rollouts-and-rollback.md`.
 
 ## Overall Progress
 
-Day 09 of 130 COMPLETE. Day 10 starting next session. 0 of 30 modules
+Day 10 of 130 COMPLETE. Day 11 starting next session. 0 of 30 modules
 completed, 1 in progress. 0 of 10 projects.
 
 ```text
-[■■                            ] 7%
+[■■■                           ] 8%
 ```
 
 Full day-by-day plan: `progress/daily-plan.md`
